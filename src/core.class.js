@@ -6,11 +6,34 @@ class Core {
     /**
      * @public
      * @async
-     * @method loadAddons
+     * @method start
      * @memberof Core#
      * @return {Promise<void>}
      */
-    async loadAddons() {
+    async start() {
+        // Create addons dir
+        // Generate agent cfg ?
+    }
+
+    /**
+     * @public
+     * @async
+     * @method stop
+     * @memberof Core#
+     * @return {Promise<void>}
+     */
+    async stop() {
+
+    }
+
+    /**
+     * @public
+     * @async
+     * @method reload
+     * @memberof Core#
+     * @return {Promise<void>}
+     */
+    async reload() {
 
     }
 
