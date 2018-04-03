@@ -31,7 +31,6 @@
                 "prefer": {
                     "arg": "param",
                     "argument": "param",
-                    "class": "constructor",
                     "return": "return",
                     "virtual": "abstract"
                 },
@@ -188,10 +187,6 @@
                 "position": "above"
             }
         ],
-        "linebreak-style": [
-            "error",
-            "unix"
-        ],
         "lines-around-comment": [
             "error",
             {
@@ -250,10 +245,6 @@
             "always"
         ],
         "one-var-declaration-per-line": "error",
-        "padded-blocks": [
-            "error",
-            "never"
-        ],
         "padding-line-between-statements": [
             "error",
             {
