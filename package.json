@@ -32,6 +32,6 @@
     },
     "dependencies": {
         "@sindresorhus/is": "^0.8.0",
-        "@slimio/config": "0.0.0"
+        "@slimio/config": "0.0.1"
     }
 }

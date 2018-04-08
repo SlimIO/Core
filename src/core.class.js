@@ -70,7 +70,8 @@ class Core {
             const configPath = join(Core.root, "agent.json");
             const configOptions = {
                 createOnNoEntry: true,
-                autoReload
+                autoReload,
+                defaultSchema: Core.DEFAULTSchema
             };
             if (autoReload) {
                 Reflect.set(configOptions, "reloadDelay", 500);
@@ -88,6 +89,11 @@ class Core {
 
         // Init core
         this.hasBeenInitialized = true;
+        process.on("SIGINT", async() => {
+            process.stdout.write("SIGINT detected... Exiting SlimIO Agent (please wait). \n");
+            await this.exit();
+            process.exit(0);
+        });
 
         return this;
     }
@@ -119,4 +125,8 @@ Core.DEFAULTConfiguration = {
     addons: {}
 };
 
+// Default Core Configuration JSON Schema
+Core.DEFAULTSchema = require("./config/agent.schema.json");
+
+// Export Core class
 module.exports = Core;
