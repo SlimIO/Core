@@ -3,8 +3,12 @@ const { join, isAbsolute } = require("path");
 const os = require("os");
 
 // Require third-party dependencies
+require("make-promises-safe");
 const is = require("@sindresorhus/is");
 const Config = require("@slimio/config");
+
+// Require internal dependencie(s)
+const { searchForValidAddonsOnDisk } = require("./utils");
 
 // Privates Symbol
 const Root = Symbol();
@@ -81,11 +85,12 @@ class Core {
         await this.config.read(Core.DEFAULTConfiguration);
 
         // Retrieve addon(s) list!
-        const addons = this.config.get("addons");
-        console.log(addons);
+        let addons = this.config.get("addons");
+        if (Reflect.ownKeys(addons).length === 0) {
+            addons = searchForValidAddonsOnDisk(Core.root);
+        }
 
-        // Length keys of 0 ? -> Check for addons on disk
-        // Else load from addons
+        // Load addons ?
 
         // Init core
         this.hasBeenInitialized = true;

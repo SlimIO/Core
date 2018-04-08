@@ -13,7 +13,7 @@
     "rules": {
         "for-direction": "error",
         "getter-return": "error",
-        "no-await-in-loop": "error",
+        "no-await-in-loop": "off",
         "no-console": 0,
         "no-extra-parens": "error",
         "no-template-curly-in-string": "error",
