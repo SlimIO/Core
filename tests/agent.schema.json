@@ -1,0 +1,21 @@
+{
+    "additionalProperties": false,
+    "properties": {
+        "hostname": {
+            "type": "string",
+            "description": "Agent hostname"
+        },
+        "platform": {
+            "type": "string",
+            "description": "Agent hostname"
+        },
+        "release": {
+            "type": "string",
+            "description": "Agent hostname"
+        },
+        "addons": {
+            "type": "object",
+            "additionalProperties": true
+        }
+    }
+}

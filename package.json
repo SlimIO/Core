@@ -29,5 +29,9 @@
         "@slimio/eslint-config": "^1.0.0",
         "ava": "^0.25.0",
         "nyc": "^11.6.0"
+    },
+    "dependencies": {
+        "@sindresorhus/is": "^0.8.0",
+        "@slimio/config": "0.0.0"
     }
 }

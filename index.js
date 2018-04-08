@@ -1,4 +1,7 @@
-const Core = require( "./src/core.class" );
+const Core = require("./src/core.class");
 
-// Exports module
-module.exports = Core;
+async function main() {
+    const agent = new Core();
+    await agent.initialize();
+}
+main().catch(console.error);
