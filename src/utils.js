@@ -56,7 +56,7 @@ async function searchForValidAddonsOnDisk(root) {
         // Apply specification verification here
         try {
             await FSAsync.access(join(dirPath, "index.js"), R_OK | X_OK);
-            await FSAsync.access(join(dirPath, `${addonName}.config.json`), R_OK | W_OK);
+            // await FSAsync.access(join(dirPath, `${addonName}.config.json`), R_OK | W_OK);
             Reflect.set(ret, addonName, {});
         }
         catch (err) {

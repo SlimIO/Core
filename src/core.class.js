@@ -17,6 +17,7 @@ const Root = Symbol();
  * @class Core
  * @property {Config} config Agent (core) configuration file
  * @property {Boolean} hasBeenInitialized Variable to know if the core has been initialize or not!
+ * @property {Map<String, any>} addons Loaded addons
  */
 class Core {
 
@@ -26,6 +27,7 @@ class Core {
     constructor() {
         this.config = null;
         this.hasBeenInitialized = false;
+        this.addons = new Map();
     }
 
     /**
@@ -42,6 +44,8 @@ class Core {
      * @memberof Core#
      * @member {String} root
      * @param {!String} sysPath system path
+     *
+     * @throws {Error}
      */
     static set root(sysPath) {
         if (!isAbsolute(sysPath)) {
@@ -54,12 +58,13 @@ class Core {
      * @public
      * @async
      * @method initialize
-     * @desc Initialize core
+     * @desc Initialize the core (load configuration, establish a list of addons to pre-load before start phase)
      * @memberof Core#
      * @param {!Boolean} [autoReload=true] enable/disable autoReload of the core configuration
      * @returns {Promise<Core>}
      *
      * @throws {Error}
+     * @throws {TypeError}
      */
     async initialize(autoReload = true) {
         if (is.nullOrUndefined(Core.root)) {
@@ -85,12 +90,16 @@ class Core {
         await this.config.read(Core.DEFAULTConfiguration);
 
         // Retrieve addon(s) list!
+        // TODO: add options to not search on disk
         let addons = this.config.get("addons");
         if (Reflect.ownKeys(addons).length === 0) {
-            addons = searchForValidAddonsOnDisk(Core.root);
+            addons = await searchForValidAddonsOnDisk(Core.root);
+            this.config.set("addons", addons);
+            await this.config.writeOnDisk();
         }
-
-        // Load addons ?
+        for (const [addonName, addonProperties] of Object.entries(addons)) {
+            this.config.observableOf(`addons.${addonName}`).subscribe(console.log);
+        }
 
         // Init core
         this.hasBeenInitialized = true;
@@ -101,6 +110,30 @@ class Core {
         });
 
         return this;
+    }
+
+    /**
+     * @public
+     * @async
+     * @method start
+     * @desc Start one/many addons (if they are not yet started!)
+     * @memberof Core#
+     * @param {String=} addonName Complete the argument to start only one addon!
+     * @param {Boolean=} [shadowRun=false]
+     * @returns {Promise<Core>}
+     *
+     * @throws {TypeError}
+     * @throws {RangeError}
+     */
+    async start(addonName, shadowRun = false) {
+        if (!is.nullOrUndefined(addonName)) {
+            if (!is.string(addonName)) {
+                throw new TypeError("Core.start->addonName should be typeof <string>");
+            }
+            if (!this.addons.has(addonName)) {
+                throw new RangeError(`Core.start - Unknow addon with name <${addonName}>`);
+            }
+        }
     }
 
     /**

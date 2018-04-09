@@ -26,8 +26,9 @@
     },
     "devDependencies": {
         "@escommunity/minami": "^1.0.0",
-        "@slimio/eslint-config": "^1.0.0",
+        "@slimio/eslint-config": "^1.1.1",
         "ava": "^0.25.0",
+        "eslint": "^4.19.1",
         "nyc": "^11.6.0"
     },
     "dependencies": {

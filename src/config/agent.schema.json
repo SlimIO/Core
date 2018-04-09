@@ -15,6 +15,20 @@
         },
         "addons": {
             "type": "object",
+            "properties": {
+                "active": {
+                    "type": "boolean",
+                    "default": true
+                },
+                "standalone": {
+                    "type": "boolean",
+                    "default": false
+                },
+                "isolate": {
+                    "type": "boolean",
+                    "default": false
+                }
+            },
             "additionalProperties": true
         }
     }
