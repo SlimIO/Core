@@ -8,7 +8,7 @@ async function main() {
 
     setImmediate(async() => {
         console.time("start");
-        await core.executeCallback("start");
+        await core.execNativeCallback("start");
         console.timeEnd("start");
     });
 }

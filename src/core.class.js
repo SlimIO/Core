@@ -56,6 +56,22 @@ class Core {
     }
 
     /**
+     * @static
+     * @method _messageHandler
+     * @desc Handle addon message!
+     * @memberof Core#
+     * @param {!String} messageId messageId
+     * @param {!String} target target
+     * @param {any[]} args Callback arguments
+     * @returns {Promise<void>}
+     */
+    static _messageHandler(messageId, target, args) {
+        console.log(messageId);
+        console.log(target);
+        console.log(args);
+    }
+
+    /**
      * @public
      * @async
      * @method initialize
@@ -102,8 +118,9 @@ class Core {
          * Require addons
          * @type {Addon[]}
          */
-        const addons = Object.keys(addonsCfg)
-            .map((path) => join(Core.root, "addons", path, "index.js"))
+        const addons = Object.entries(addonsCfg)
+            .filter(([, { standalone = false }]) => !standalone)
+            .map(([addonName]) => join(Core.root, "addons", addonName, "index.js"))
             .map(require);
 
         // Verify each required index entry
@@ -115,17 +132,23 @@ class Core {
                 try {
                     const { name } = await addon.executeCallback("get_info");
                     this.addons.set(name, addon);
-                    this.config.observableOf(`addons.${name}`)
-                        .subscribe(Core._updateAddonConfiguration(name));
 
                     // Setup start listener
                     addon.on("start", () => {
                         console.log(`Addon ${name} started!`);
+                        this.config.observableOf(`addons.${name}`).subscribe(
+                            (curr) => {
+                                this.updateAddon(name, curr).catch(console.error);
+                            },
+                            console.error
+                        );
+                        addon.on("message", Core._messageHandler.bind(this));
                     });
 
                     // Setup start listener
                     addon.on("stop", () => {
                         console.log(`Addon ${name} stopped!`);
+                        addon.removeListener("message", Core._messageHandler.bind(this));
                     });
 
                     // Emit init
@@ -150,63 +173,74 @@ class Core {
     }
 
     /**
-     * @static
+     * @private
+     * @async
      * @public
-     * @method _updateAddonConfiguration
+     * @method updateAddon
      * @memberof Core#
      * @param {!String} addonName addonName
-     * @returns {Function<void>} Return clojure
+     * @param {!Object} newConfig new addon Configuration
+     * @returns {Promise<void>} Return Async clojure
      */
-    static _updateAddonConfiguration(addonName) {
-        return (newConfig) => {
-            console.log(`addon ${addonName} new config ${JSON.stringify(newConfig, null, 4)}`);
-        };
+    async updateAddon(addonName, newConfig) {
+        const { active } = newConfig;
+        const addon = this.addons.get(addonName);
+        if (active && !addon.isStarted) {
+            await this.execNativeCallback("start", addonName);
+        }
+        else if (!active && addon.isStarted) {
+            await this.execNativeCallback("stop", addonName);
+        }
     }
 
     /**
      * @public
      * @async
-     * @method executeCallback
-     * @desc execute a callback on all or given addon
+     * @method execNativeCallback
+     * @desc execute a Native callback on all or given addon(s)
      * @memberof Core#
      * @param {!String} callbackName Callback name to execute
      * @param {String=} addonName Complete the argument to start only one addon!
      * @returns {Promise<Core>}
      *
      * @throws {TypeError}
+     * @throws {Error}
      * @throws {RangeError}
      */
-    async executeCallback(callbackName, addonName) {
+    async execNativeCallback(callbackName, addonName) {
         if (!is.string(callbackName)) {
-            throw new TypeError("Core.executeCallback->callbackName should be typeof <string>");
+            throw new TypeError(
+                "Core.execNativeCallback->callbackName should be typeof <string>"
+            );
         }
-
-        /**
-         * Start all addons!
-         * @type {Addon[]}
-         */
-        const addons = [];
+        if (!Addon.ReservedCallbacksName.has(callbackName)) {
+            throw new Error(
+                `Core.execNativeCallback->callbackName ${callbackName} is a not a native callback!`
+            );
+        }
 
         // If addonName argument is defined
-        if (!is.nullOrUndefined(addonName)) {
-            if (!is.string(addonName)) {
-                throw new TypeError("Core.executeCallback->addonName should be typeof <string>");
-            }
-            if (!this.addons.has(addonName)) {
-                throw new RangeError(
-                    `Core.executeCallback - Unknow addon with name <${addonName}>`
-                );
-            }
-            addons.push(this.addons.get(addonName));
-        }
-        else {
+        if (is.nullOrUndefined(addonName)) {
+
+            /** @type {Addon[]} */
+            const addons = [];
             addons.push(...this.addons.values());
+            await Promise.all(
+                addons.map((addon) => addon.callbacks.get(callbackName)())
+            );
+
+            return this;
         }
 
-        // Execute callback on addon(s)
-        await Promise.all(
-            addons.map((addon) => addon.callbacks.get(callbackName)())
-        );
+        if (!is.string(addonName)) {
+            throw new TypeError("Core.executeCallback->addonName should be typeof <string>");
+        }
+        if (!this.addons.has(addonName)) {
+            throw new RangeError(
+                `Core.executeCallback - Unknow addon with name <${addonName}>`
+            );
+        }
+        await this.addons.get(addonName).callbacks.get(callbackName)();
 
         return this;
     }
@@ -215,7 +249,7 @@ class Core {
      * @public
      * @async
      * @method exit
-     * @desc Exit core
+     * @desc Exit the core properly
      * @memberof Core#
      * @returns {Promise<Core>}
      *
@@ -226,6 +260,7 @@ class Core {
             throw new Error("Core.exit - Cannot exit an unitialized core");
         }
         await this.config.close();
+        await this.execNativeCallback("stop");
     }
 
 }

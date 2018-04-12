@@ -5,11 +5,10 @@ cpu.registerCallback("test", async() => {
     return true;
 });
 
-cpu.on("init", function init() {
-    console.log("init triggered!");
-});
-cpu.on("start", function start() {
-    console.log("start triggered");
-});
-
+setInterval(function interval() {
+    if (!cpu.isStarted) {
+        return;
+    }
+    console.log("CPU Interval triggered!");
+}, 1000);
 module.exports = cpu;
