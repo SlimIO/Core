@@ -6,18 +6,16 @@ const os = require("os");
 require("make-promises-safe");
 const is = require("@sindresorhus/is");
 const Config = require("@slimio/config");
+const Addon = require("@slimio/addon");
 
 // Require internal dependencie(s)
-const { searchForValidAddonsOnDisk } = require("./utils");
-
-// Privates Symbol
-const Root = Symbol();
+const { searchForAddons } = require("./utils");
 
 /**
  * @class Core
  * @property {Config} config Agent (core) configuration file
  * @property {Boolean} hasBeenInitialized Variable to know if the core has been initialize or not!
- * @property {Map<String, any>} addons Loaded addons
+ * @property {Map<String, Addon>} addons Loaded addons
  */
 class Core {
 
@@ -36,22 +34,25 @@ class Core {
      * @member {String} root
      */
     static get root() {
-        return this[Root];
+        return Reflect.get(Core, "_core");
     }
 
     /**
      * @public
      * @memberof Core#
      * @member {String} root
-     * @param {!String} sysPath system path
+     * @param {!String} value system path
      *
      * @throws {Error}
      */
-    static set root(sysPath) {
-        if (!isAbsolute(sysPath)) {
-            throw new Error("Core.root->sysPath should be an absolute system path!");
+    static set root(value) {
+        if (!isAbsolute(value)) {
+            throw new Error("Core.root->value should be an absolute system path!");
         }
-        this[Root] = sysPath;
+        Reflect.defineProperty(Core, "_core", {
+            value,
+            writable: true
+        });
     }
 
     /**
@@ -90,22 +91,58 @@ class Core {
         await this.config.read(Core.DEFAULTConfiguration);
 
         // Retrieve addon(s) list!
-        // TODO: add options to not search on disk
-        let addons = this.config.get("addons");
-        if (Reflect.ownKeys(addons).length === 0) {
-            addons = await searchForValidAddonsOnDisk(Core.root);
-            this.config.set("addons", addons);
+        let addonsCfg = this.config.get("addons");
+        if (Object.keys(addonsCfg).length === 0) {
+            addonsCfg = await searchForAddons(Core.root);
+            this.config.set("addons", addonsCfg);
             await this.config.writeOnDisk();
         }
-        for (const [addonName, addonProperties] of Object.entries(addons)) {
-            this.config.observableOf(`addons.${addonName}`).subscribe(console.log);
+
+        /**
+         * Require addons
+         * @type {Addon[]}
+         */
+        const addons = Object.keys(addonsCfg)
+            .map((path) => join(Core.root, "addons", path, "index.js"))
+            .map(require);
+
+        // Verify each required index entry
+        for (const addon of addons) {
+            if (addon instanceof Addon === false) {
+                continue;
+            }
+            process.nextTick(async() => {
+                try {
+                    const { name } = await addon.executeCallback("get_info");
+                    this.addons.set(name, addon);
+                    this.config.observableOf(`addons.${name}`)
+                        .subscribe(Core._updateAddonConfiguration(name));
+
+                    // Setup start listener
+                    addon.on("start", () => {
+                        console.log(`Addon ${name} started!`);
+                    });
+
+                    // Setup start listener
+                    addon.on("stop", () => {
+                        console.log(`Addon ${name} stopped!`);
+                    });
+
+                    // Emit init
+                    addon.isConnected = true;
+                    addon.emit("init");
+                }
+                catch (err) {
+                    process.stderr.write(err);
+                }
+            });
         }
 
         // Init core
         this.hasBeenInitialized = true;
         process.on("SIGINT", async() => {
             process.stdout.write("SIGINT detected... Exiting SlimIO Agent (please wait). \n");
-            await this.exit();
+            await this.exit().catch(console.error);
             process.exit(0);
         });
 
@@ -113,27 +150,65 @@ class Core {
     }
 
     /**
+     * @static
+     * @public
+     * @method _updateAddonConfiguration
+     * @memberof Core#
+     * @param {!String} addonName addonName
+     * @returns {Function<void>} Return clojure
+     */
+    static _updateAddonConfiguration(addonName) {
+        return (newConfig) => {
+            console.log(`addon ${addonName} new config ${JSON.stringify(newConfig, null, 4)}`);
+        };
+    }
+
+    /**
      * @public
      * @async
-     * @method start
-     * @desc Start one/many addons (if they are not yet started!)
+     * @method executeCallback
+     * @desc execute a callback on all or given addon
      * @memberof Core#
+     * @param {!String} callbackName Callback name to execute
      * @param {String=} addonName Complete the argument to start only one addon!
-     * @param {Boolean=} [shadowRun=false]
      * @returns {Promise<Core>}
      *
      * @throws {TypeError}
      * @throws {RangeError}
      */
-    async start(addonName, shadowRun = false) {
+    async executeCallback(callbackName, addonName) {
+        if (!is.string(callbackName)) {
+            throw new TypeError("Core.executeCallback->callbackName should be typeof <string>");
+        }
+
+        /**
+         * Start all addons!
+         * @type {Addon[]}
+         */
+        const addons = [];
+
+        // If addonName argument is defined
         if (!is.nullOrUndefined(addonName)) {
             if (!is.string(addonName)) {
-                throw new TypeError("Core.start->addonName should be typeof <string>");
+                throw new TypeError("Core.executeCallback->addonName should be typeof <string>");
             }
             if (!this.addons.has(addonName)) {
-                throw new RangeError(`Core.start - Unknow addon with name <${addonName}>`);
+                throw new RangeError(
+                    `Core.executeCallback - Unknow addon with name <${addonName}>`
+                );
             }
+            addons.push(this.addons.get(addonName));
         }
+        else {
+            addons.push(...this.addons.values());
+        }
+
+        // Execute callback on addon(s)
+        await Promise.all(
+            addons.map((addon) => addon.callbacks.get(callbackName)())
+        );
+
+        return this;
     }
 
     /**

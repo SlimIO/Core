@@ -8,7 +8,7 @@ const {
     readdir,
     lstat,
     access,
-    constants: { R_OK, W_OK, X_OK }
+    constants: { R_OK, X_OK }
 } = require("fs");
 
 // Require third-party dependencie(s)
@@ -23,13 +23,13 @@ const FSAsync = {
 
 /**
  * @async
- * @function searchForValidAddonsOnDisk
- * @exports utils/searchForValidAddonsOnDisk
+ * @function searchForAddons
+ * @exports utils/searchForAddons
  * @desc Search for valid addons on the agent disk
  * @param {!String} root root system path
  * @returns {Object}
  */
-async function searchForValidAddonsOnDisk(root) {
+async function searchForAddons(root) {
     if (!is.string(root)) {
         throw new TypeError("utils.searchForValidAddonsOnDisk->root should be typeof <string>");
     }
@@ -68,5 +68,5 @@ async function searchForValidAddonsOnDisk(root) {
 }
 
 module.exports = {
-    searchForValidAddonsOnDisk
+    searchForAddons
 };
