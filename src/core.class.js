@@ -1,5 +1,6 @@
 // Require Node.JS dependencies
 const { join, isAbsolute } = require("path");
+const { fork } = require("child_process");
 const os = require("os");
 
 // Require third-party dependencies
@@ -11,11 +12,15 @@ const Addon = require("@slimio/addon");
 // Require internal dependencie(s)
 const { searchForAddons } = require("./utils");
 
+// Fork wrapper path
+const forkWrapper = join(__dirname, "fork.wrapper.js");
+
 /**
  * @class Core
  * @property {Config} config Agent (core) configuration file
  * @property {Boolean} hasBeenInitialized Variable to know if the core has been initialize or not!
  * @property {Map<String, Addon>} addons Loaded addons
+ * @property {Set<String>} rootingTable
  */
 class Core {
 
@@ -26,6 +31,7 @@ class Core {
         this.config = null;
         this.hasBeenInitialized = false;
         this.addons = new Map();
+        this.rootingTable = new Set();
     }
 
     /**
@@ -114,10 +120,9 @@ class Core {
             await this.config.writeOnDisk();
         }
 
-        /**
-         * Require addons
-         * @type {Addon[]}
-         */
+        // TODO: Get vCPU count ?
+
+        /** @type {Addon[]} */
         const addons = Object.entries(addonsCfg)
             .filter(([, { standalone = false }]) => !standalone)
             .map(([addonName]) => join(Core.root, "addons", addonName, "index.js"))
@@ -128,7 +133,7 @@ class Core {
             if (addon instanceof Addon === false) {
                 continue;
             }
-            process.nextTick(async() => {
+            process.nextTick(async () => {
                 try {
                     const { name } = await addon.executeCallback("get_info");
                     this.addons.set(name, addon);
@@ -145,7 +150,7 @@ class Core {
                         addon.on("message", Core._messageHandler.bind(this));
                     });
 
-                    // Setup start listener
+                    // Setup stop listener
                     addon.on("stop", () => {
                         console.log(`Addon ${name} stopped!`);
                         addon.removeListener("message", Core._messageHandler.bind(this));
@@ -161,9 +166,42 @@ class Core {
             });
         }
 
+        /** @type {Addon[]} */
+        const parallelAddons = Object.entries(addonsCfg)
+            .filter(([, { standalone = false }]) => standalone);
+
+        // Init parallel addon
+        for (const [addonName] of parallelAddons) {
+            const fileIndex = join(Core.root, "addons", addonName, "index.js");
+            const addonCP = fork(forkWrapper, [fileIndex]);
+            addonCP.on("error", console.error);
+            addonCP.on("data", ({ subject = "emitter", content }) => {
+                switch (subject) {
+                    case "emitter":
+                        if (content === "init") {
+                            this.addons.set(addonName, addonCP);
+                            this.rootingTable.add(addonName);
+                        }
+                        break;
+                    case "message":
+                        break;
+                    default:
+                        break;
+                }
+            });
+            addonCP.on("close", (code) => {
+                console.log(`Addon close with code: ${code}`);
+            });
+
+            // Setup timeout at the next iteration
+            setImmediate(() => {
+
+            });
+        }
+
         // Init core
         this.hasBeenInitialized = true;
-        process.on("SIGINT", async() => {
+        process.on("SIGINT", async () => {
             process.stdout.write("SIGINT detected... Exiting SlimIO Agent (please wait). \n");
             await this.exit().catch(console.error);
             process.exit(0);
