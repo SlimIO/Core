@@ -15,21 +15,27 @@
         },
         "addons": {
             "type": "object",
-            "properties": {
-                "active": {
-                    "type": "boolean",
-                    "default": true
-                },
-                "standalone": {
-                    "type": "boolean",
-                    "default": false
-                },
-                "isolate": {
-                    "type": "boolean",
-                    "default": false
+            "patternProperties": {
+                "[a-zA-Z]+": {
+                    "type": "object",
+                    "required": ["active"],
+                    "properties": {
+                        "active": {
+                            "type": "boolean",
+                            "default": true
+                        },
+                        "standalone": {
+                            "type": "boolean",
+                            "default": false
+                        },
+                        "isolate": {
+                            "type": "boolean",
+                            "default": false
+                        }
+                    },
+                    "additionalProperties": true
                 }
-            },
-            "additionalProperties": true
+            }
         }
     }
 }

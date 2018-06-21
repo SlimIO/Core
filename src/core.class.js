@@ -115,8 +115,10 @@ class Core {
 
         // Retrieve addon(s) list!
         let addonsCfg = this.config.get("addons");
+        console.log(this.config.payload);
         if (Object.keys(addonsCfg).length === 0) {
             addonsCfg = await searchForAddons(Core.root);
+            console.log(addonsCfg);
             this.config.set("addons", addonsCfg);
             await this.config.writeOnDisk();
         }
