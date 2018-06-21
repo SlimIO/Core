@@ -6,7 +6,7 @@
         "cpu": {
             "active": true,
             "isolate": false,
-            "standalone": true
+            "standalone": false
         }
     }
 }
