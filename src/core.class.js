@@ -1,4 +1,5 @@
 // Require Node.JS dependencies
+require("v8-compile-cache");
 const { join, isAbsolute } = require("path");
 const { fork } = require("child_process");
 const os = require("os");
@@ -133,13 +134,13 @@ class Core {
             if (addon instanceof Addon === false) {
                 continue;
             }
-            process.nextTick(async () => {
+            setImmediate(async() => {
                 try {
                     const { name } = await addon.executeCallback("get_info");
                     this.addons.set(name, addon);
 
                     // Setup start listener
-                    addon.on("start", () => {
+                    addon.prependListener("start", () => {
                         console.log(`Addon ${name} started!`);
                         this.config.observableOf(`addons.${name}`).subscribe(
                             (curr) => {
@@ -147,13 +148,13 @@ class Core {
                             },
                             console.error
                         );
-                        addon.on("message", Core._messageHandler.bind(this));
+                        addon.prependListener("message", Core._messageHandler.bind(this));
                     });
 
                     // Setup stop listener
-                    addon.on("stop", () => {
+                    addon.prependListener("stop", () => {
                         console.log(`Addon ${name} stopped!`);
-                        addon.removeListener("message", Core._messageHandler.bind(this));
+                        addon.removeListener("message");
                     });
 
                     // Emit init
@@ -201,7 +202,7 @@ class Core {
 
         // Init core
         this.hasBeenInitialized = true;
-        process.on("SIGINT", async () => {
+        process.on("SIGINT", async() => {
             process.stdout.write("SIGINT detected... Exiting SlimIO Agent (please wait). \n");
             await this.exit().catch(console.error);
             process.exit(0);
@@ -261,8 +262,7 @@ class Core {
         if (is.nullOrUndefined(addonName)) {
 
             /** @type {Addon[]} */
-            const addons = [];
-            addons.push(...this.addons.values());
+            const addons = [...this.addons.values()];
             await Promise.all(
                 addons.map((addon) => addon.callbacks.get(callbackName)())
             );
