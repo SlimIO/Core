@@ -1,16 +1,15 @@
 // Require Node.JS dependencies
-require("v8-compile-cache");
 const { join, isAbsolute } = require("path");
 const { fork } = require("child_process");
 const os = require("os");
 
-// Require third-party dependencies
+// Require Third-party dependencies
 require("make-promises-safe");
 const is = require("@sindresorhus/is");
+
+// Require Internal Dependencies
 const Config = require("@slimio/config");
 const Addon = require("@slimio/addon");
-
-// Require internal dependencie(s)
 const { searchForAddons } = require("./utils");
 
 // Fork wrapper path
@@ -56,6 +55,7 @@ class Core {
         if (!isAbsolute(value)) {
             throw new Error("Core.root->value should be an absolute system path!");
         }
+
         Reflect.defineProperty(Core, "_core", {
             value,
             writable: true
@@ -115,7 +115,6 @@ class Core {
 
         // Retrieve addon(s) list!
         let addonsCfg = this.config.get("addons");
-        console.log(this.config.payload);
         if (Object.keys(addonsCfg).length === 0) {
             addonsCfg = await searchForAddons(Core.root);
             console.log(addonsCfg);
@@ -250,14 +249,10 @@ class Core {
      */
     async execNativeCallback(callbackName, addonName) {
         if (!is.string(callbackName)) {
-            throw new TypeError(
-                "Core.execNativeCallback->callbackName should be typeof <string>"
-            );
+            throw new TypeError("Core.execNativeCallback->callbackName should be typeof <string>");
         }
         if (!Addon.ReservedCallbacksName.has(callbackName)) {
-            throw new Error(
-                `Core.execNativeCallback->callbackName ${callbackName} is a not a native callback!`
-            );
+            throw new Error(`Core.execNativeCallback->callbackName ${callbackName} is a not a native callback!`);
         }
 
         // If addonName argument is defined
@@ -276,9 +271,7 @@ class Core {
             throw new TypeError("Core.executeCallback->addonName should be typeof <string>");
         }
         if (!this.addons.has(addonName)) {
-            throw new RangeError(
-                `Core.executeCallback - Unknow addon with name <${addonName}>`
-            );
+            throw new RangeError(`Core.executeCallback - Unknow addon with name <${addonName}>`);
         }
         await this.addons.get(addonName).callbacks.get(callbackName)();
 
