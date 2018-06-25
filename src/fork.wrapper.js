@@ -1,5 +1,7 @@
-// Require dependencies
+// Require Third-party Dependencies
 const is = require("@sindresorhus/is");
+
+// Require Internal Dependencies
 const Addon = require("@slimio/addon");
 
 // Get fork start arguments
@@ -9,7 +11,7 @@ if (!is.string(addonPath)) {
 }
 
 async function message(messageId, target, args) {
-
+    // Send message into the process!
 }
 
 async function main() {
@@ -37,7 +39,7 @@ async function main() {
         process.send({
             content: "stop"
         });
-        addon.removeListener("message", message);
+        addon.removeAllListeners("message", message);
     });
 
     // Emit init
@@ -49,7 +51,7 @@ async function main() {
 }
 
 // Call main handler
-main().catch((err) => {
-    process.stderr.write(err);
+main().catch((error) => {
+    console.error(error);
     process.exit(1);
 });
