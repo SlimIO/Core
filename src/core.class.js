@@ -1,6 +1,5 @@
 // Require Node.JS dependencies
 const { join, isAbsolute } = require("path");
-const { fork } = require("child_process");
 const os = require("os");
 
 // Require Third-party dependencies
@@ -11,15 +10,15 @@ const is = require("@sindresorhus/is");
 const Config = require("@slimio/config");
 const Addon = require("@slimio/addon");
 const { searchForAddons } = require("./utils");
-
-// Fork wrapper path
-const forkWrapper = join(__dirname, "fork.wrapper.js");
+const ParallelAddon = require("./parallelAddon.class");
 
 /**
  * @class Core
  * @property {Config} config Agent (core) configuration file
  * @property {Boolean} hasBeenInitialized Variable to know if the core has been initialize or not!
  * @property {Map<String, Addon>} _addons Loaded addons
+ * @property {Addon[]} addons
+ * @property {String} root
  * @property {Set<String>} rootingTable
  */
 class Core {
@@ -37,17 +36,10 @@ class Core {
 
         // Setup class properties
         this.root = dirname;
-        this.config = null;
         this.hasBeenInitialized = false;
         this._addons = new Map();
         this.rootingTable = new Set();
-
-        // Handle exit signal!
-        process.on("SIGINT", async() => {
-            process.stdout.write("SIGINT detected... Exiting SlimIO Agent (please wait). \n");
-            await this.exit().catch(console.error);
-            process.exit(0);
-        });
+        this.config = null;
     }
 
     /**
@@ -132,13 +124,10 @@ class Core {
         // Setup configuration observable!
         this.config.observableOf(`addons.${name}`).subscribe(
             (curr) => {
-                this.addonOnConfigurationUpdate(name, curr).catch(console.error);
+                this.addonConfigurationObserver(name, curr).catch(console.error);
             },
             console.error
         );
-
-        // Emit init
-        addon.isConnected = true;
 
         return addon;
     }
@@ -152,7 +141,6 @@ class Core {
      * @param {!Boolean} [autoReload=true] enable/disable autoReload of the core configuration
      * @returns {Promise<Core>}
      *
-     * @throws {Error}
      * @throws {TypeError}
      */
     async initialize(autoReload = true) {
@@ -171,65 +159,52 @@ class Core {
 
         // Retrieve addon(s) list!
         let addonsCfg = this.config.get("addons");
+
+        // If the configuration is empty, search for addons on the disk
         if (Object.keys(addonsCfg).length === 0) {
-            addonsCfg = await searchForAddons(Core.root);
+            addonsCfg = await searchForAddons(this.root);
             this.config.set("addons", addonsCfg);
             await this.config.writeOnDisk();
         }
 
-        /** @type {Addon[]} */
-        const addons = Object.entries(addonsCfg)
-            .filter(([, { standalone = false }]) => !standalone)
-            .map(([addonName]) => join(this.root, "addons", addonName, "index.js"))
-            .map(require);
+        // Initialize all addons!
+        const synchronousAddonToLoad = [];
+        for (const [addonName, { standalone }] of Object.entries(addonsCfg)) {
+            const addonEntryFile = join(this.root, "addons", addonName, "index.js");
+            if (standalone) {
+                const addon = new ParallelAddon(addonEntryFile, addonName);
 
-        // Verify each required index entry
-        const addonToLoad = [];
-        for (const addon of addons) {
-            if (addon instanceof Addon === false) {
+                // Add and observer configuration at the next loop iteration
+                setImmediate(() => {
+                    this._addons.set(addonName, addon);
+                    this.config.observableOf(`addons.${addonName}`).subscribe(
+                        (curr) => {
+                            this.addonConfigurationObserver(addonName, curr).catch(console.error);
+                        },
+                        console.error
+                    );
+                });
                 continue;
             }
-            addonToLoad.push(this._loadSynchronousAddon(addon));
-        }
-        // TODO: Sort addonToLoad by flag "builtin"
-        Promise.all(addonToLoad).then((addons) => {
-            for (const addon of addons) {
-                addon.emit("init");
-            }
-        }).catch(console.error);
 
-        /** @type {Addon[]} */
-        const parallelAddons = Object.entries(addonsCfg)
-            .filter(([, { standalone = false }]) => standalone);
-
-        // Init parallel addon
-        for (const [addonName] of parallelAddons) {
-            const addonCP = fork(forkWrapper, [
-                join(this.root, "addons", addonName, "index.js")
-            ]);
-            addonCP.on("error", (error) => {
-                console.error(error);
-            });
-            addonCP.on("data", ({ subject = "emitter", content }) => {
-                switch (subject) {
-                    case "emitter":
-                        if (content === "init") {
-                            this._addons.set(addonName, addonCP);
-                            this.rootingTable.add(addonName);
-                        }
-                        break;
-                    case "message":
-                        break;
-                    default:
-                        break;
+            try {
+                const addon = require(addonEntryFile);
+                if (addon instanceof Addon === false) {
+                    throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
                 }
-            });
-            addonCP.on("close", (code) => {
-                console.log(`Addon close with code: ${code}`);
-            });
+                synchronousAddonToLoad.push(this._loadSynchronousAddon(addon));
+            }
+            catch (error) {
+                console.error(error);
+            }
         }
 
-        // Init core
+        // Wait for all Synchronous Addon to be fully loaded to send an "init" event!
+        (await Promise.all(synchronousAddonToLoad)).forEach((addon) => {
+            addon.emit("init");
+        });
+
+        // Setup initialization state to true
         this.hasBeenInitialized = true;
 
         return this;
@@ -239,18 +214,20 @@ class Core {
      * @private
      * @async
      * @public
-     * @method addonOnConfigurationUpdate
+     * @method addonConfigurationObserver
      * @desc This function is triggered when an Observed addon is updated!
      * @memberof Core#
      * @param {!String} addonName addonName
      * @param {!Object} newConfig new addon Configuration
      * @returns {Promise<void>} Return Async clojure
      */
-    async addonOnConfigurationUpdate(addonName, { active }) {
+    async addonConfigurationObserver(addonName, { active }) {
         const addon = this._addons.get(addonName);
-        const eventName = active && !addon.isStarted ? "start" : "stop";
+        if (!addon.isStarted && !active) {
+            return;
+        }
 
-        await addon.executeCallback(eventName);
+        await addon.executeCallback(active ? "start" : "stop");
     }
 
     /**
@@ -259,7 +236,7 @@ class Core {
      * @method exit
      * @desc Exit the core properly
      * @memberof Core#
-     * @returns {Promise<Core>}
+     * @returns {Promise<void>}
      *
      * @throws {Error}
      */

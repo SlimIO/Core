@@ -1,24 +1,21 @@
 const Core = require("../src/core.class");
 
-function nextLoopIteration() {
-    return new Promise((resolve) => {
-        setImmediate(resolve);
-    });
-}
-
+/**
+ * @async
+ * @function main
+ * @returns {Promise<void>}
+ */
 async function main() {
-    console.time("init");
-    const core = await (new Core(__dirname)).initialize();
-    console.timeEnd("init");
+    console.time("start_core");
+    const core = new Core(__dirname);
+    await core.initialize();
+    console.timeEnd("start_core");
 
-    // Wait next loop iteration
-    await nextLoopIteration();
-
-    // Start all addons!
-    console.time("start");
-    await Promise.all(
-        core.addons.map((addon) => addon.executeCallback("start"))
-    );
-    console.timeEnd("start");
+    // Handle exit signal!
+    process.on("SIGINT", async() => {
+        console.error("Exiting SlimIO Agent (please wait)");
+        await core.exit().catch(console.error);
+        process.exit(0);
+    });
 }
 main().catch(console.error);

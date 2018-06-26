@@ -41,13 +41,6 @@ async function main() {
         });
         addon.removeAllListeners("message", message);
     });
-
-    // Emit init
-    addon.isConnected = true;
-    addon.emit("init");
-    process.send({
-        content: "init"
-    });
 }
 
 // Call main handler
