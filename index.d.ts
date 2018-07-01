@@ -18,9 +18,9 @@ declare class Core {
     static DEFAULTSchema: object;
 
     // Methods
-    private _loadSynchronousAddon(addon: Addon): Promise<Addon>;
+    private loadAddon(addon: Addon): Promise<Addon>;
+    private onAddonReconfiguration(addonName: string, newConfig: Core.AddonsCFG): void;
     initialize(): Promise<this>;
-    private addonConfigurationObserver(addonName: string, newConfig: Core.AddonsCFG): void;
     exit(): Promise<void>
 }
 

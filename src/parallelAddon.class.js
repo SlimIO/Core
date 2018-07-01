@@ -38,6 +38,7 @@ class ParallelAddon extends events {
         this.addonName = addonName;
         this.isStarted = false;
         this.messageEvents = new events.EventEmitter();
+        this.messageEvents.setMaxListeners(3);
 
         /** @type {Set<String>} */
         this.memoryIds = new Set();
@@ -98,7 +99,7 @@ class ParallelAddon extends events {
                 this.messageEvents.removeListener(messageId, listener);
                 this.memoryIds.delete(messageId);
                 reject(new Error("timeout"));
-            }, 2000);
+            }, 125);
             this.messageEvents.once(messageId, listener);
         });
     }
@@ -113,7 +114,7 @@ class ParallelAddon extends events {
      * @returns {void}
      */
     messageHandler({ target = "message", body, messageId = "", args }) {
-        console.log(`CP Message from ${this.addonName} with target: ${target}`);
+        console.log(`CP (parallel) Message from ${this.addonName} with target: ${target}`);
         if (ParallelAddon.selfEvents.has(target)) {
             if (target === "message") {
                 if (this.memoryIds.has(messageId)) {

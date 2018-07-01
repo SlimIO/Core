@@ -31,7 +31,7 @@ async function main() {
      * @returns {Promise<void>}
      */
     async function message({ messageId, callback, args = [] }) {
-        console.log(`Receiving message with id ${messageId}, callback ${callback}`);
+        console.log(`CP (fork), id => ${messageId}, callback => ${callback}`);
         try {
             const body = await addon.executeCallback(callback, ...args);
             process.send({ messageId, body });

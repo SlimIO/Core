@@ -122,15 +122,17 @@ class Core {
          */
         const messageHandler = async(messageId, target, args) => {
             const [addonName, targettedCallback] = target.split(".");
-            const addon = this._addons.get(addonName);
-            const responseBody = await addon.executeCallback(targettedCallback, args);
+            const targetAddon = this._addons.get(addonName);
+
+            const responseBody = await targetAddon.executeCallback(targettedCallback, args);
             if (addon instanceof Addon) {
                 const observer = addon.observers.get(messageId);
                 observer.next(responseBody);
+                observer.complete();
             }
             else {
                 // Send for para
-                console.log("handle message ?");
+                console.log("send response to parallel addon ?");
             }
         };
 
@@ -149,7 +151,7 @@ class Core {
         // Setup configuration observable!
         this.config.observableOf(`addons.${name}`).subscribe(
             (curr) => {
-                this.addonConfigurationObserver(name, curr);
+                this.onAddonReconfiguration(name, curr);
             },
             console.error
         );
@@ -221,14 +223,14 @@ class Core {
     /**
      * @private
      * @public
-     * @method addonConfigurationObserver
+     * @method onAddonReconfiguration
      * @desc This function is triggered when an Observed addon is updated!
      * @memberof Core#
      * @param {!String} addonName addonName
      * @param {AddonProperties} newConfig new addon Configuration
      * @returns {void} Return Async clojure
      */
-    addonConfigurationObserver(addonName, { active }) {
+    onAddonReconfiguration(addonName, { active }) {
         const addon = this._addons.get(addonName);
         if (!addon.isStarted && !active) {
             return;
