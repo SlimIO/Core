@@ -94,22 +94,6 @@ class Core {
     }
 
     /**
-     * @static
-     * @method _messageHandler
-     * @desc Handle addon message!
-     * @memberof Core#
-     * @param {!String} messageId messageId
-     * @param {!String} target target
-     * @param {any[]} args Callback arguments
-     * @returns {void}
-     */
-    static _messageHandler(messageId, target, args) {
-        console.log(messageId);
-        console.log(target);
-        console.log(args);
-    }
-
-    /**
      * @async
      * @private
      * @method _loadSynchronousAddon
@@ -125,10 +109,27 @@ class Core {
         console.log(`Initializing addon with name ${name}`);
         this._addons.set(name, addon);
 
+        /**
+         * @async
+         * @func _messageHandler
+         * @desc Handle addon message!
+         * @param {!String} messageId messageId
+         * @param {!String} target target
+         * @param {any[]} args Callback arguments
+         * @returns {void}
+         */
+        const messageHandler = async(messageId, target, args) => {
+            const [addonName, targettedCallback] = target.split(".");
+            const addon = this._addons.get(addonName);
+            const responseBody = await addon.executeCallback(targettedCallback, args);
+            const observer = addon.observers.get(messageId);
+            observer.next(responseBody);
+        };
+
         // Setup start listener
         addon.prependListener("start", () => {
             console.log(`Addon ${name} started!`);
-            addon.prependListener("message", Core._messageHandler.bind(this));
+            addon.prependListener("message", messageHandler);
         });
 
         // Setup stop listener
@@ -180,6 +181,7 @@ class Core {
 
                 // Add and observer configuration at the next loop iteration
                 setImmediate(() => {
+                    addon.createForkProcesses();
                     this._addons.set(addonName, addon);
                     this.config.observableOf(`addons.${addonName}`).subscribe(
                         (curr) => {

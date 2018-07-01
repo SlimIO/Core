@@ -36,17 +36,29 @@ class ParallelAddon extends events {
         this.root = root;
         this.addonName = addonName;
         this.isStarted = false;
+
+        /** @type {WeakSet<String>} */
+        this.memoryIds = new WeakSet();
+
+        /** @type {ChildProcesses} */
         this.cp = null;
 
-        this.on("start", this.start);
+        // Listen for event
+        this.on("start", () => {
+            this.isStarted = true;
+        });
+
+        this.on("stop", () => {
+            this.isStarted = false;
+        });
     }
 
     /**
      * @async
-     * @method start
+     * @method createForkProcesses
      * @returns {Promise<this>}
      */
-    start() {
+    createForkProcesses() {
         // Setup CP
         this.cp = fork(forkWrapper, [this.root]);
         this.cp.on("error", console.error);
@@ -56,28 +68,40 @@ class ParallelAddon extends events {
         return this;
     }
 
+    /**
+     * @method executeCallback
+     * @param {!String} name name
+     * @param {any[]} args args
+     * @returns {void}
+     */
     executeCallback(name, args) {
-
+        if (is.nullOrUndefined(this.cp)) {
+            throw new Error("ChildProcesses not defined!");
+        }
+        this.cp.send({});
     }
 
     /**
      * @method messageHandler
      * @param {Object} options options
-     * @param {!String} [options.subject="emitter"] message subject
-     * @param {!String} options.content message content
+     * @param {!String} [options.target="addon"] message subject
+     * @param {any} options.body message content
+     * @param {String} options.messageId messageId
      * @returns {void}
      */
-    messageHandler({ subject = "emitter", content }) {
-        console.log(`CP Message from ${this.addonName} with Subject: ${subject} & content ${content}`);
-        switch (subject) {
-            case "emitter":
-                this.emit(content);
-                break;
-            case "message":
-                break;
-            default:
-                break;
+    messageHandler({ target = "addon", body, messageId = "" }) {
+        console.log(`CP Message from ${this.addonName} with target: ${target} & body ${body}`);
+        if (target === "addon") {
+            if (!this.memoryIds.has(messageId)) {
+                return;
+            }
+
+            return;
         }
+        if (!is.string(body)) {
+            return;
+        }
+        this.emit(body);
     }
 
     /**

@@ -1,23 +1,18 @@
 // Require Internal Dependencies
 const Addon = require("@slimio/addon");
 
-// Get fork start arguments
+// Get the forked addon !
 const [addonPath] = process.argv.slice(2);
 if (typeof addonPath !== "string") {
     throw new TypeError("fork.wrapper --addonPath should be typeof <string>");
 }
 
 /**
- * @async
- * @func message
- * @param {!String} messageId messageId
- * @param {!String} target target
- * @param {any[]} args args
- * @returns {Promise<void>}
+ * @typedef {Object} ProcessesMessage
+ * @property {!String} messageId
+ * @property {!String} callback
+ * @property {any[]} args
  */
-async function message(messageId, target, args) {
-    // Send message into the process!
-}
 
 async function main() {
     /** @type {Addon} */
@@ -29,22 +24,41 @@ async function main() {
     /** @type {{name: string}} */
     const { name } = await addon.executeCallback("get_info");
 
+    /**
+     * @async
+     * @func message
+     * @param {ProcessesMessage} payload message payload
+     * @returns {Promise<void>}
+     */
+    async function message({ messageId, callback, args = [] }) {
+        try {
+            const responseBody = await addon.executeCallback(callback, ...args);
+            process.send({
+                messageId,
+                body: responseBody
+            });
+        }
+        catch (error) {
+            process.send({
+                messageId,
+                body: error.message
+            });
+        }
+    }
+
     // Setup start listener
     addon.on("start", () => {
         console.log(`Addon ${name} started!`);
-        process.send({
-            content: "start"
-        });
+        process.send({ target: "core", body: "start" });
         addon.on("message", message);
     });
 
     // Setup stop listener
     addon.on("stop", () => {
         console.log(`Addon ${name} stopped!`);
-        process.send({
-            content: "stop"
-        });
+        process.send({ target: "core", body: "stop" });
         addon.removeAllListeners("message", message);
+        process.exit(0);
     });
 }
 
