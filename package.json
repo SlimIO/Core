@@ -38,6 +38,7 @@
         "@slimio/addon": "^0.1.0",
         "@slimio/config": "^0.2.0",
         "make-promises-safe": "^1.1.0",
+        "uuid": "^3.3.2",
         "v8-compile-cache": "^2.0.0"
     }
 }

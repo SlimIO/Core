@@ -32,31 +32,37 @@ async function main() {
      */
     async function message({ messageId, callback, args = [] }) {
         try {
-            const responseBody = await addon.executeCallback(callback, ...args);
-            process.send({
-                messageId,
-                body: responseBody
-            });
+            const body = await addon.executeCallback(callback, ...args);
+            process.send({ messageId, body });
         }
         catch (error) {
-            process.send({
-                messageId,
-                body: error.message
-            });
+            process.send({ messageId, body: error.message });
         }
+    }
+
+    /**
+     * @func sendMessage
+     * @param {!String} messageId messageId
+     * @param {!String} target message target
+     * @param {*} args args
+     * @returns {void}
+     */
+    function sendMessage(messageId, target, args) {
+        process.send({ messageId, target, args });
     }
 
     // Setup start listener
     addon.on("start", () => {
         console.log(`Addon ${name} started!`);
-        process.send({ target: "core", body: "start" });
-        addon.on("message", message);
+        process.send({ target: "start" });
+        addon.on("message", sendMessage);
+        process.on("message", message);
     });
 
     // Setup stop listener
     addon.on("stop", () => {
         console.log(`Addon ${name} stopped!`);
-        process.send({ target: "core", body: "stop" });
+        process.send({ target: "stop" });
         addon.removeAllListeners("message", message);
         process.exit(0);
     });

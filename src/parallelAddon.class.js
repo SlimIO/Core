@@ -5,6 +5,7 @@ const events = require("events");
 
 // Require Third-party Dependencies
 const is = require("@sindresorhus/is");
+const uuidv4 = require("uuid/v4");
 
 // Fork wrapper path
 const forkWrapper = join(__dirname, "forked.container.js");
@@ -36,6 +37,7 @@ class ParallelAddon extends events {
         this.root = root;
         this.addonName = addonName;
         this.isStarted = false;
+        this.messageEvents = new events.EventEmitter();
 
         /** @type {WeakSet<String>} */
         this.memoryIds = new WeakSet();
@@ -63,56 +65,80 @@ class ParallelAddon extends events {
         this.cp = fork(forkWrapper, [this.root]);
         this.cp.on("error", console.error);
         this.cp.on("message", this.messageHandler);
-        this.cp.on("close", this.close);
+        this.cp.on("close", (code) => {
+            console.log(`Addon close with code: ${code}`);
+        });
 
         return this;
     }
 
     /**
+     * @async
      * @method executeCallback
      * @param {!String} name name
      * @param {any[]} args args
-     * @returns {void}
+     * @returns {Promise<any>}
      */
     executeCallback(name, args) {
         if (is.nullOrUndefined(this.cp)) {
             throw new Error("ChildProcesses not defined!");
         }
-        this.cp.send({});
+
+        /** @type {String} */
+        const messageId = uuidv4();
+
+        // Send message at the next loop iteration!
+        setImmediate(() => {
+            this.memoryIds.add(messageId);
+            this.cp.send({ messageId, callback: name, args });
+        });
+
+        // Wait for a response!
+        return new Promise((resolve, reject) => {
+            /** @type {NodeJS.Timer} */
+            let timer = null;
+            function listener(body) {
+                clearTimeout(timer);
+                resolve(body);
+            }
+
+            timer = setTimeout(() => {
+                this.messageEvents.removeListener(messageId, listener);
+                this.memoryIds.delete(messageId);
+                reject(new Error("timeout"));
+            }, 2000);
+            this.messageEvents.once(messageId, listener);
+        });
     }
 
     /**
      * @method messageHandler
      * @param {Object} options options
-     * @param {!String} [options.target="addon"] message subject
+     * @param {!String} [options.target="message"] message target
      * @param {any} options.body message content
      * @param {String} options.messageId messageId
+     * @param {any[]} options.args args
      * @returns {void}
      */
-    messageHandler({ target = "addon", body, messageId = "" }) {
+    messageHandler({ target = "message", body, messageId = "", args }) {
         console.log(`CP Message from ${this.addonName} with target: ${target} & body ${body}`);
-        if (target === "addon") {
-            if (!this.memoryIds.has(messageId)) {
-                return;
+        if (ParallelAddon.selfEvents.has(target)) {
+            if (target === "message") {
+                if (this.memoryIds.has(messageId)) {
+                    this.memoryIds.delete(messageId);
+                    this.messageEvents.emit(messageId, body);
+                }
             }
-
-            return;
+            else {
+                this.emit(target);
+            }
         }
-        if (!is.string(body)) {
-            return;
+        else {
+            this.emit("message", messageId, args);
         }
-        this.emit(body);
-    }
-
-    /**
-     * @method close
-     * @param {!Number} code close code
-     * @returns {void}
-     */
-    close(code) {
-        console.log(`Addon close with code: ${code}`);
     }
 
 }
+ParallelAddon.selfEvents = new Set(["start", "stop", "message"]);
 
 module.exports = ParallelAddon;
