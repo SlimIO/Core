@@ -4,18 +4,28 @@ const Addon = require("@slimio/addon");
 // Declare Addon
 const cpu = new Addon("cpu");
 
-cpu.registerCallback(async function test() {
+/** @type {NodeJS.Timer} */
+let addonInterval;
+
+function interval() {
+    console.log("CPU Interval triggered!");
+}
+
+async function test() {
     return true;
+}
+cpu.registerCallback(test);
+
+cpu.on("start", () => {
+    addonInterval = setInterval(interval, 1000);
 });
 
-cpu.on("init", () => {
+cpu.on("stop", () => {
+    clearInterval(addonInterval);
+});
+
+cpu.once("init", () => {
     console.log("cpu addon initialized");
 });
 
-setInterval(function interval() {
-    if (!cpu.isStarted) {
-        return;
-    }
-    console.log("CPU Interval triggered!");
-}, 1000);
 module.exports = cpu;

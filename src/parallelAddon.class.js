@@ -46,7 +46,7 @@ class ParallelAddon extends events {
      * @method start
      * @returns {Promise<this>}
      */
-    async start() {
+    start() {
         // Setup CP
         this.cp = fork(forkWrapper, [this.root]);
         this.cp.on("error", console.error);
@@ -57,10 +57,6 @@ class ParallelAddon extends events {
     }
 
     executeCallback(name, args) {
-
-    }
-
-    sendMessage() {
 
     }
 

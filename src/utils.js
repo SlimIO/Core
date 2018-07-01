@@ -12,8 +12,9 @@ const {
     constants: { R_OK, X_OK }
 } = require("fs");
 
-// Require third-party dependencie(s)
-const is = require("@sindresorhus/is");
+/**
+ * @typedef {{[key: string] : {}}} emptyAddon
+ */
 
 /**
  * @async
@@ -22,18 +23,18 @@ const is = require("@sindresorhus/is");
  * @memberof utils
  * @desc Search for valid addons on the agent disk
  * @param {!String} root root system path
- * @returns {Object}
+ * @returns {emptyAddon}
  */
 async function searchForAddons(root) {
-    if (!is.string(root)) {
+    if (typeof root !== "string") {
         throw new TypeError("utils.searchForValidAddonsOnDisk->root should be typeof <string>");
     }
     const rootFiles = new Set(await readdir(root));
     if (!rootFiles.has("addons")) {
-        return [];
+        return {};
     }
 
-    // Get all addons directory
+    /** @type {emptyAddon} */
     const ret = Object.create(null);
     const addonsDir = join(root, "addons");
     const addons = await readdir(addonsDir);
@@ -51,7 +52,7 @@ async function searchForAddons(root) {
                 continue;
             }
             await access(join(dirPath, "index.js"), R_OK | X_OK);
-            Reflect.set(ret, addonName, {});
+            Reflect.set(ret, addonName, Object.create(null));
         }
         catch (err) {
             continue;

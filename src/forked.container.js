@@ -1,27 +1,32 @@
-// Require Third-party Dependencies
-const is = require("@sindresorhus/is");
-
 // Require Internal Dependencies
 const Addon = require("@slimio/addon");
 
 // Get fork start arguments
 const [addonPath] = process.argv.slice(2);
-if (!is.string(addonPath)) {
+if (typeof addonPath !== "string") {
     throw new TypeError("fork.wrapper --addonPath should be typeof <string>");
 }
 
+/**
+ * @async
+ * @func message
+ * @param {!String} messageId messageId
+ * @param {!String} target target
+ * @param {any[]} args args
+ * @returns {Promise<void>}
+ */
 async function message(messageId, target, args) {
     // Send message into the process!
 }
 
 async function main() {
-    // Require addon
+    /** @type {Addon} */
     const addon = require(addonPath);
     if (addon instanceof Addon === false) {
         throw new TypeError("fork.wrapper addon entry file should be a SlimIO Addon");
     }
 
-    // Execute get_info callback
+    /** @type {{name: string}} */
     const { name } = await addon.executeCallback("get_info");
 
     // Setup start listener

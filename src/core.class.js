@@ -12,6 +12,9 @@ const Addon = require("@slimio/addon");
 const { searchForAddons } = require("./utils");
 const ParallelAddon = require("./parallelAddon.class");
 
+/** @typedef {{ active: boolean; standalone?: boolean }} AddonProperties */
+/** @typedef {{[key: string]: AddonProperties}} AddonCFG */
+
 /**
  * @class Core
  * @property {Config} config Agent (core) configuration file
@@ -19,17 +22,18 @@ const ParallelAddon = require("./parallelAddon.class");
  * @property {Map<String, Addon>} _addons Loaded addons
  * @property {Addon[]} addons
  * @property {String} root
- * @property {Set<String>} rootingTable
  */
 class Core {
 
     /**
      * @constructor
      * @param {!String} dirname Core dirname
+     * @param {Object} [options={}] options
+     * @param {Number=} [options.autoReload=500] autoReload configuration
      *
      * @throws {TypeError}
      */
-    constructor(dirname) {
+    constructor(dirname, options = Object.create(null)) {
         if (!is.string(dirname)) {
             throw new TypeError("dirname should be type <string>");
         }
@@ -37,15 +41,25 @@ class Core {
         // Setup class properties
         this.root = dirname;
         this.hasBeenInitialized = false;
+
+        /** @type {Map<String, Addon | ParallelAddon>} */
         this._addons = new Map();
-        this.rootingTable = new Set();
-        this.config = null;
+
+        const configPath = join(this.root, "agent.json");
+        this.config = new Config(configPath, {
+            createOnNoEntry: true,
+            writeOnSet: true,
+            autoReload: true,
+            defaultSchema: Core.DEFAULTSchema,
+            reloadDelay: options.autoReload ? 500 : void 0
+        });
     }
 
     /**
      * @public
      * @memberof Core#
      * @member {Addon[]} addons
+     * @return {Addon[]}
      */
     get addons() {
         return [...this._addons.values()];
@@ -57,7 +71,7 @@ class Core {
      * @member {String} root
      */
     get root() {
-        return Reflect.get(this, "_core");
+        return Reflect.get(this, "_root");
     }
 
     /**
@@ -73,7 +87,7 @@ class Core {
             throw new Error("Core.root->value should be an absolute system path!");
         }
 
-        Reflect.defineProperty(this, "_core", {
+        Reflect.defineProperty(this, "_root", {
             value,
             writable: true
         });
@@ -87,7 +101,7 @@ class Core {
      * @param {!String} messageId messageId
      * @param {!String} target target
      * @param {any[]} args Callback arguments
-     * @returns {Promise<void>}
+     * @returns {void}
      */
     static _messageHandler(messageId, target, args) {
         console.log(messageId);
@@ -105,7 +119,9 @@ class Core {
      * @this Core
      */
     async _loadSynchronousAddon(addon) {
+        /** @type {{name: string}} */
         const { name } = await addon.executeCallback("get_info");
+
         console.log(`Initializing addon with name ${name}`);
         this._addons.set(name, addon);
 
@@ -124,7 +140,7 @@ class Core {
         // Setup configuration observable!
         this.config.observableOf(`addons.${name}`).subscribe(
             (curr) => {
-                this.addonConfigurationObserver(name, curr).catch(console.error);
+                this.addonConfigurationObserver(name, curr);
             },
             console.error
         );
@@ -138,36 +154,24 @@ class Core {
      * @method initialize
      * @desc Initialize the core (load configuration, establish a list of addons to pre-load before start phase)
      * @memberof Core#
-     * @param {!Boolean} [autoReload=true] enable/disable autoReload of the core configuration
-     * @returns {Promise<Core>}
+     * @returns {Promise<this>}
      *
      * @throws {TypeError}
      */
-    async initialize(autoReload = true) {
-        if (!is.boolean(autoReload)) {
-            throw new TypeError("Core.initialize->autoReload should be typeof <Boolean>");
-        }
-
+    async initialize() {
         // Read the agent (core) configuration file
-        this.config = new Config(join(this.root, "agent.json"), {
-            createOnNoEntry: true,
-            autoReload,
-            defaultSchema: Core.DEFAULTSchema,
-            reloadDelay: autoReload ? 500 : void 0
-        });
         await this.config.read(Core.DEFAULTConfiguration);
 
-        // Retrieve addon(s) list!
+        /** @type {AddonCFG} */
         let addonsCfg = this.config.get("addons");
 
         // If the configuration is empty, search for addons on the disk
         if (Object.keys(addonsCfg).length === 0) {
             addonsCfg = await searchForAddons(this.root);
             this.config.set("addons", addonsCfg);
-            await this.config.writeOnDisk();
         }
 
-        // Initialize all addons!
+        /** @type {Addon[]} */
         const synchronousAddonToLoad = [];
         for (const [addonName, { standalone }] of Object.entries(addonsCfg)) {
             const addonEntryFile = join(this.root, "addons", addonName, "index.js");
@@ -179,7 +183,7 @@ class Core {
                     this._addons.set(addonName, addon);
                     this.config.observableOf(`addons.${addonName}`).subscribe(
                         (curr) => {
-                            this.addonConfigurationObserver(addonName, curr).catch(console.error);
+                            this.addonConfigurationObserver(addonName, curr);
                         },
                         console.error
                     );
@@ -188,6 +192,7 @@ class Core {
             }
 
             try {
+                /** @type {Addon} */
                 const addon = require(addonEntryFile);
                 if (addon instanceof Addon === false) {
                     throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
@@ -200,9 +205,9 @@ class Core {
         }
 
         // Wait for all Synchronous Addon to be fully loaded to send an "init" event!
-        (await Promise.all(synchronousAddonToLoad)).forEach((addon) => {
+        for (const addon of await Promise.all(synchronousAddonToLoad)) {
             addon.emit("init");
-        });
+        }
 
         // Setup initialization state to true
         this.hasBeenInitialized = true;
@@ -212,22 +217,26 @@ class Core {
 
     /**
      * @private
-     * @async
      * @public
      * @method addonConfigurationObserver
      * @desc This function is triggered when an Observed addon is updated!
      * @memberof Core#
      * @param {!String} addonName addonName
-     * @param {!Object} newConfig new addon Configuration
-     * @returns {Promise<void>} Return Async clojure
+     * @param {AddonProperties} newConfig new addon Configuration
+     * @returns {void} Return Async clojure
      */
-    async addonConfigurationObserver(addonName, { active }) {
+    addonConfigurationObserver(addonName, { active }) {
         const addon = this._addons.get(addonName);
         if (!addon.isStarted && !active) {
             return;
         }
 
-        await addon.executeCallback(active ? "start" : "stop");
+        try {
+            addon.executeCallback(active ? "start" : "stop");
+        }
+        catch (error) {
+            console.error(error);
+        }
     }
 
     /**
