@@ -14,8 +14,14 @@ async function main() {
     // Handle exit signal!
     process.on("SIGINT", async() => {
         console.error("Exiting SlimIO Agent (please wait)");
-        await core.exit().catch(console.error);
-        process.exit(0);
+        try {
+            await core.exit();
+            setImmediate(process.exit);
+        }
+        catch (error) {
+            console.error(error);
+            process.exit(1);
+        }
     });
 }
 main().catch(console.error);

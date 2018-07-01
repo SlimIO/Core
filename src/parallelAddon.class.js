@@ -39,11 +39,17 @@ class ParallelAddon extends events {
         this.isStarted = false;
         this.messageEvents = new events.EventEmitter();
 
-        /** @type {WeakSet<String>} */
-        this.memoryIds = new WeakSet();
+        /** @type {Set<String>} */
+        this.memoryIds = new Set();
 
-        /** @type {ChildProcesses} */
-        this.cp = null;
+        /** @type {NodeJS.ChildProcesses} */
+        this.cp = fork(forkWrapper, [this.root]);
+        this.cp.on("error", console.error);
+        this.cp.on("message", this.messageHandler.bind(this));
+        this.cp.on("close", (code) => {
+            console.log(`Addon close with code: ${code}`);
+        });
+
 
         // Listen for event
         this.on("start", () => {
@@ -57,32 +63,18 @@ class ParallelAddon extends events {
 
     /**
      * @async
-     * @method createForkProcesses
-     * @returns {Promise<this>}
-     */
-    createForkProcesses() {
-        // Setup CP
-        this.cp = fork(forkWrapper, [this.root]);
-        this.cp.on("error", console.error);
-        this.cp.on("message", this.messageHandler);
-        this.cp.on("close", (code) => {
-            console.log(`Addon close with code: ${code}`);
-        });
-
-        return this;
-    }
-
-    /**
-     * @async
      * @method executeCallback
      * @param {!String} name name
      * @param {any[]} args args
      * @returns {Promise<any>}
+     *
+     * @throws {Error}
      */
     executeCallback(name, args) {
         if (is.nullOrUndefined(this.cp)) {
             throw new Error("ChildProcesses not defined!");
         }
+        console.log(`Executing callback name => ${name}`);
 
         /** @type {String} */
         const messageId = uuidv4();
@@ -121,7 +113,7 @@ class ParallelAddon extends events {
      * @returns {void}
      */
     messageHandler({ target = "message", body, messageId = "", args }) {
-        console.log(`CP Message from ${this.addonName} with target: ${target} & body ${body}`);
+        console.log(`CP Message from ${this.addonName} with target: ${target}`);
         if (ParallelAddon.selfEvents.has(target)) {
             if (target === "message") {
                 if (this.memoryIds.has(messageId)) {

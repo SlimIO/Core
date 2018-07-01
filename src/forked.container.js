@@ -31,6 +31,7 @@ async function main() {
      * @returns {Promise<void>}
      */
     async function message({ messageId, callback, args = [] }) {
+        console.log(`Receiving message with id ${messageId}, callback ${callback}`);
         try {
             const body = await addon.executeCallback(callback, ...args);
             process.send({ messageId, body });
@@ -39,6 +40,7 @@ async function main() {
             process.send({ messageId, body: error.message });
         }
     }
+    process.on("message", message);
 
     /**
      * @func sendMessage
@@ -56,7 +58,6 @@ async function main() {
         console.log(`Addon ${name} started!`);
         process.send({ target: "start" });
         addon.on("message", sendMessage);
-        process.on("message", message);
     });
 
     // Setup stop listener
@@ -64,7 +65,7 @@ async function main() {
         console.log(`Addon ${name} stopped!`);
         process.send({ target: "stop" });
         addon.removeAllListeners("message", message);
-        process.exit(0);
+        setImmediate(process.exit);
     });
 }
 

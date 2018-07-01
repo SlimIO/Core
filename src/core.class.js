@@ -96,15 +96,17 @@ class Core {
     /**
      * @async
      * @private
-     * @method _loadSynchronousAddon
-     * @param {!Addon} addon addon
+     * @method loadAddon
+     * @param {!Addon | ParallelAddon} addon addon
      * @returns {Promise<Addon>}
      *
      * @this Core
      */
-    async _loadSynchronousAddon(addon) {
+    async loadAddon(addon) {
+        console.time("get_info");
         /** @type {{name: string}} */
         const { name } = await addon.executeCallback("get_info");
+        console.timeEnd("get_info");
 
         console.log(`Initializing addon with name ${name}`);
         this._addons.set(name, addon);
@@ -122,8 +124,14 @@ class Core {
             const [addonName, targettedCallback] = target.split(".");
             const addon = this._addons.get(addonName);
             const responseBody = await addon.executeCallback(targettedCallback, args);
-            const observer = addon.observers.get(messageId);
-            observer.next(responseBody);
+            if (addon instanceof Addon) {
+                const observer = addon.observers.get(messageId);
+                observer.next(responseBody);
+            }
+            else {
+                // Send for para
+                console.log("handle message ?");
+            }
         };
 
         // Setup start listener
@@ -181,14 +189,7 @@ class Core {
 
                 // Add and observer configuration at the next loop iteration
                 setImmediate(() => {
-                    addon.createForkProcesses();
-                    this._addons.set(addonName, addon);
-                    this.config.observableOf(`addons.${addonName}`).subscribe(
-                        (curr) => {
-                            this.addonConfigurationObserver(addonName, curr);
-                        },
-                        console.error
-                    );
+                    this.loadAddon(addon).catch(console.error);
                 });
                 continue;
             }
@@ -199,7 +200,7 @@ class Core {
                 if (addon instanceof Addon === false) {
                     throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
                 }
-                synchronousAddonToLoad.push(this._loadSynchronousAddon(addon));
+                synchronousAddonToLoad.push(this.loadAddon(addon));
             }
             catch (error) {
                 console.error(error);
