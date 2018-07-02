@@ -11,7 +11,7 @@
         "ondemand": {
             "active": true,
             "isolate": false,
-            "standalone": false
+            "standalone": true
         }
     }
 }

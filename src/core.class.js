@@ -111,6 +111,9 @@ class Core {
         console.log(`Initializing addon with name ${name}`);
         this._addons.set(name, addon);
 
+        // Know if the addon is parallel or not!
+        const isParallelAddon = addon instanceof ParallelAddon;
+
         /**
          * @async
          * @func _messageHandler
@@ -125,14 +128,13 @@ class Core {
             const targetAddon = this._addons.get(addonName);
 
             const responseBody = await targetAddon.executeCallback(targettedCallback, args);
-            if (addon instanceof Addon) {
+            if (!isParallelAddon) {
                 const observer = addon.observers.get(messageId);
                 observer.next(responseBody);
                 observer.complete();
             }
             else {
-                // Send for para
-                console.log("send response to parallel addon ?");
+                addon.cp.send({ messageId, body: responseBody });
             }
         };
 

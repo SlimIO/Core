@@ -11,6 +11,7 @@ if (typeof addonPath !== "string") {
  * @typedef {Object} ProcessesMessage
  * @property {!String} messageId
  * @property {!String} callback
+ * @property {any=} body
  * @property {any[]} args
  */
 
@@ -30,8 +31,15 @@ async function main() {
      * @param {ProcessesMessage} payload message payload
      * @returns {Promise<void>}
      */
-    async function message({ messageId, callback, args = [] }) {
-        console.log(`CP (fork), id => ${messageId}, callback => ${callback}`);
+    async function message({ messageId, callback, body, args = [] }) {
+        if (typeof body !== "undefined") {
+            const observer = addon.observers.get(messageId);
+            observer.next(body);
+            observer.complete();
+
+            return void 0;
+        }
+
         try {
             const body = await addon.executeCallback(callback, ...args);
             process.send({ messageId, body });
@@ -39,6 +47,8 @@ async function main() {
         catch (error) {
             process.send({ messageId, body: error.message });
         }
+
+        return void 0;
     }
     process.on("message", message);
 

@@ -40,9 +40,6 @@ class ParallelAddon extends events {
         this.messageEvents = new events.EventEmitter();
         this.messageEvents.setMaxListeners(3);
 
-        /** @type {Set<String>} */
-        this.memoryIds = new Set();
-
         /** @type {NodeJS.ChildProcesses} */
         this.cp = fork(forkWrapper, [this.root]);
         this.cp.on("error", console.error);
@@ -75,14 +72,12 @@ class ParallelAddon extends events {
         if (is.nullOrUndefined(this.cp)) {
             throw new Error("ChildProcesses not defined!");
         }
-        console.log(`Executing callback name => ${name}`);
 
         /** @type {String} */
         const messageId = uuidv4();
 
-        // Send message at the next loop iteration!
+        // Send message at the next loop iteration
         setImmediate(() => {
-            this.memoryIds.add(messageId);
             this.cp.send({ messageId, callback: name, args });
         });
 
@@ -97,7 +92,6 @@ class ParallelAddon extends events {
 
             timer = setTimeout(() => {
                 this.messageEvents.removeListener(messageId, listener);
-                this.memoryIds.delete(messageId);
                 reject(new Error("timeout"));
             }, 125);
             this.messageEvents.once(messageId, listener);
@@ -114,20 +108,16 @@ class ParallelAddon extends events {
      * @returns {void}
      */
     messageHandler({ target = "message", body, messageId = "", args }) {
-        console.log(`CP (parallel) Message from ${this.addonName} with target: ${target}`);
         if (ParallelAddon.selfEvents.has(target)) {
             if (target === "message") {
-                if (this.memoryIds.has(messageId)) {
-                    this.memoryIds.delete(messageId);
-                    this.messageEvents.emit(messageId, body);
-                }
+                this.messageEvents.emit(messageId, body);
             }
             else {
                 this.emit(target);
             }
         }
         else {
-            this.emit("message", messageId, args);
+            this.emit("message", messageId, target, args);
         }
     }
 
