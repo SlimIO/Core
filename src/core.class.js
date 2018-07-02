@@ -108,7 +108,8 @@ class Core {
     async loadAddon(addon) {
         /** @type {{name: string, callbacks: string[]}} */
         const { name, callbacks } = await addon.executeCallback("get_info");
-        const callbackAddrs = callbacks.map((callback) => `${name}.${callback}`);
+
+        // Add the addon to the addon list!
         this._addons.set(name, addon);
 
         let messageHandler = null;
@@ -148,8 +149,8 @@ class Core {
 
         // Setup start listener
         addon.prependListener("start", () => {
-            for (const callback of callbackAddrs) {
-                this.routingTable.set(callback, (args) => {
+            for (const callback of callbacks) {
+                this.routingTable.set(`${name}.${callback}`, (args) => {
                     return addon.executeCallback(callback, args);
                 });
             }
@@ -159,8 +160,8 @@ class Core {
         // Setup stop listener
         addon.prependListener("stop", () => {
             addon.removeAllListeners("message");
-            for (const callback of callbackAddrs) {
-                this.routingTable.delete(callback);
+            for (const callback of callbacks) {
+                this.routingTable.delete(`${name}.${callback}`);
             }
         });
 
