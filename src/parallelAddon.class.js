@@ -86,7 +86,7 @@ class ParallelAddon extends events {
             timer = setTimeout(() => {
                 this.messageEvents.removeListener(messageId, listener);
                 reject(new Error("timeout"));
-            }, 125);
+            }, 250);
         });
     }
 

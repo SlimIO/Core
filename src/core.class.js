@@ -42,6 +42,9 @@ class Core {
         this.root = dirname;
         this.hasBeenInitialized = false;
 
+        /** @type {Map<String, () => any>} */
+        this.routingTable = new Map();
+
         /** @type {Map<String, Addon | ParallelAddon>} */
         this._addons = new Map();
 
@@ -103,10 +106,9 @@ class Core {
      * @this Core
      */
     async loadAddon(addon) {
-        /** @type {{name: string}} */
-        const { name } = await addon.executeCallback("get_info");
-
-        console.log(`Initializing addon with name ${name}`);
+        /** @type {{name: string, callbacks: string[]}} */
+        const { name, callbacks } = await addon.executeCallback("get_info");
+        const callbackAddrs = callbacks.map((callback) => `${name}.${callback}`);
         this._addons.set(name, addon);
 
         let messageHandler = null;
@@ -121,10 +123,7 @@ class Core {
              * @returns {void}
              */
             messageHandler = async(messageId, target, args) => {
-                const [addonName, targettedCallback] = target.split(".");
-                const targetAddon = this._addons.get(addonName);
-
-                const responseBody = await targetAddon.executeCallback(targettedCallback, args);
+                const responseBody = await this.routingTable.get(target)(args);
                 addon.cp.send({ messageId, body: responseBody });
             };
         }
@@ -139,10 +138,7 @@ class Core {
              * @returns {void}
              */
             messageHandler = async(messageId, target, args) => {
-                const [addonName, targettedCallback] = target.split(".");
-                const targetAddon = this._addons.get(addonName);
-
-                const responseBody = await targetAddon.executeCallback(targettedCallback, args);
+                const responseBody = await this.routingTable.get(target)(args);
 
                 const observer = addon.observers.get(messageId);
                 observer.next(responseBody);
@@ -152,12 +148,20 @@ class Core {
 
         // Setup start listener
         addon.prependListener("start", () => {
+            for (const callback of callbackAddrs) {
+                this.routingTable.set(callback, (args) => {
+                    return addon.executeCallback(callback, args);
+                });
+            }
             addon.prependListener("message", messageHandler);
         });
 
         // Setup stop listener
         addon.prependListener("stop", () => {
             addon.removeAllListeners("message");
+            for (const callback of callbackAddrs) {
+                this.routingTable.delete(callback);
+            }
         });
 
         // Setup configuration observable!
