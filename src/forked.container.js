@@ -66,15 +66,15 @@ async function main() {
     // Setup start listener
     addon.on("start", () => {
         console.log(`Addon ${name} started!`);
-        process.send({ target: "start" });
         addon.on("message", sendMessage);
+        process.send({ target: "start" });
     });
 
     // Setup stop listener
     addon.on("stop", () => {
         console.log(`Addon ${name} stopped!`);
-        process.send({ target: "stop" });
         addon.removeAllListeners("message", message);
+        process.send({ target: "stop" });
         setImmediate(process.exit);
     });
 }
@@ -83,4 +83,9 @@ async function main() {
 main().catch((error) => {
     console.error(error);
     process.exit(1);
+});
+
+// Catch SIGINT Signal
+process.on("SIGINT", (signal) => {
+    console.log(`Receiving signal : ${signal}`);
 });

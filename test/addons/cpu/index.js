@@ -8,11 +8,11 @@ const cpu = new Addon("cpu");
 let addonInterval;
 
 function interval() {
-    console.log("CPU Interval triggered!");
+    // console.log("CPU Interval triggered!");
 }
 
 async function test() {
-    return true;
+    return "hello world!";
 }
 cpu.registerCallback(test);
 

@@ -6,9 +6,9 @@ const Scheduler = require("@slimio/scheduler");
 const ondemand = new Addon("ondemand");
 
 async function interval() {
-    console.time("get_cpu");
-    ondemand.sendMessage("cpu.get_info").subscribe((info) => {
-        console.timeEnd("get_cpu");
+    console.time("execTest");
+    ondemand.sendMessage("cpu.test").subscribe((info) => {
+        console.timeEnd("execTest");
         console.log(info);
     });
 

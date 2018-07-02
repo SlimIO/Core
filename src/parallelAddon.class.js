@@ -45,7 +45,7 @@ class ParallelAddon extends events {
         this.cp.on("error", console.error);
         this.cp.on("message", this.messageHandler.bind(this));
         this.cp.on("close", (code) => {
-            console.log(`Addon close with code: ${code}`);
+            console.log(`Addon ${addonName} closed with signal code: ${code}`);
         });
 
 
@@ -69,17 +69,9 @@ class ParallelAddon extends events {
      * @throws {Error}
      */
     executeCallback(name, args) {
-        if (is.nullOrUndefined(this.cp)) {
-            throw new Error("ChildProcesses not defined!");
-        }
-
         /** @type {String} */
         const messageId = uuidv4();
-
-        // Send message at the next loop iteration
-        setImmediate(() => {
-            this.cp.send({ messageId, callback: name, args });
-        });
+        this.cp.send({ messageId, callback: name, args });
 
         // Wait for a response!
         return new Promise((resolve, reject) => {
@@ -89,12 +81,12 @@ class ParallelAddon extends events {
                 clearTimeout(timer);
                 resolve(body);
             }
+            this.messageEvents.once(messageId, listener);
 
             timer = setTimeout(() => {
                 this.messageEvents.removeListener(messageId, listener);
                 reject(new Error("timeout"));
             }, 125);
-            this.messageEvents.once(messageId, listener);
         });
     }
 
@@ -108,13 +100,11 @@ class ParallelAddon extends events {
      * @returns {void}
      */
     messageHandler({ target = "message", body, messageId = "", args }) {
-        if (ParallelAddon.selfEvents.has(target)) {
-            if (target === "message") {
-                this.messageEvents.emit(messageId, body);
-            }
-            else {
-                this.emit(target);
-            }
+        if (target === "start" || target === "stop") {
+            this.emit(target);
+        }
+        else if (target === "message") {
+            this.messageEvents.emit(messageId, body);
         }
         else {
             this.emit("message", messageId, target, args);
@@ -122,6 +112,5 @@ class ParallelAddon extends events {
     }
 
 }
-ParallelAddon.selfEvents = new Set(["start", "stop", "message"]);
 
 module.exports = ParallelAddon;

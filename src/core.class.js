@@ -103,50 +103,60 @@ class Core {
      * @this Core
      */
     async loadAddon(addon) {
-        console.time("get_info");
         /** @type {{name: string}} */
         const { name } = await addon.executeCallback("get_info");
-        console.timeEnd("get_info");
 
         console.log(`Initializing addon with name ${name}`);
         this._addons.set(name, addon);
 
-        // Know if the addon is parallel or not!
-        const isParallelAddon = addon instanceof ParallelAddon;
+        let messageHandler = null;
+        if (addon instanceof ParallelAddon) {
+            /**
+             * @async
+             * @func messageHandler
+             * @desc Handle addon message!
+             * @param {!String} messageId messageId
+             * @param {!String} target target
+             * @param {any[]} args Callback arguments
+             * @returns {void}
+             */
+            messageHandler = async(messageId, target, args) => {
+                const [addonName, targettedCallback] = target.split(".");
+                const targetAddon = this._addons.get(addonName);
 
-        /**
-         * @async
-         * @func _messageHandler
-         * @desc Handle addon message!
-         * @param {!String} messageId messageId
-         * @param {!String} target target
-         * @param {any[]} args Callback arguments
-         * @returns {void}
-         */
-        const messageHandler = async(messageId, target, args) => {
-            const [addonName, targettedCallback] = target.split(".");
-            const targetAddon = this._addons.get(addonName);
+                const responseBody = await targetAddon.executeCallback(targettedCallback, args);
+                addon.cp.send({ messageId, body: responseBody });
+            };
+        }
+        else {
+            /**
+             * @async
+             * @func messageHandler
+             * @desc Handle addon message!
+             * @param {!String} messageId messageId
+             * @param {!String} target target
+             * @param {any[]} args Callback arguments
+             * @returns {void}
+             */
+            messageHandler = async(messageId, target, args) => {
+                const [addonName, targettedCallback] = target.split(".");
+                const targetAddon = this._addons.get(addonName);
 
-            const responseBody = await targetAddon.executeCallback(targettedCallback, args);
-            if (!isParallelAddon) {
+                const responseBody = await targetAddon.executeCallback(targettedCallback, args);
+
                 const observer = addon.observers.get(messageId);
                 observer.next(responseBody);
                 observer.complete();
-            }
-            else {
-                addon.cp.send({ messageId, body: responseBody });
-            }
-        };
+            };
+        }
 
         // Setup start listener
         addon.prependListener("start", () => {
-            console.log(`Addon ${name} started!`);
             addon.prependListener("message", messageHandler);
         });
 
         // Setup stop listener
         addon.prependListener("stop", () => {
-            console.log(`Addon ${name} stopped!`);
             addon.removeAllListeners("message");
         });
 
@@ -261,10 +271,15 @@ class Core {
             throw new Error("Core.exit - Cannot close unitialized core");
         }
 
-        await this.config.close();
+        // Wait for all addons to be stopped!
         await Promise.all(
             this.addons.map((addon) => addon.executeCallback("stop"))
         );
+
+        // Close config (is not already closed!)
+        if (this.config.configHasBeenRead) {
+            await this.config.close();
+        }
         this.hasBeenInitialized = false;
     }
 
