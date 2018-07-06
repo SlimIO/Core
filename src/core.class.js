@@ -109,9 +109,7 @@ class Core {
         /** @type {{name: string, callbacks: string[]}} */
         const { name, callbacks } = await addon.executeCallback("get_info");
 
-        // Add the addon to the addon list!
-        this._addons.set(name, addon);
-
+        /** @type {() => void} */
         let messageHandler = null;
         if (addon instanceof ParallelAddon) {
             /**
@@ -165,14 +163,6 @@ class Core {
             }
         });
 
-        // Setup configuration observable!
-        this.config.observableOf(`addons.${name}`).subscribe(
-            (curr) => {
-                this.onAddonReconfiguration(name, curr);
-            },
-            console.error
-        );
-
         return addon;
     }
 
@@ -199,36 +189,19 @@ class Core {
             this.config.set("addons", addonsCfg);
         }
 
-        /** @type {Addon[]} */
-        const synchronousAddonToLoad = [];
-        for (const [addonName, { standalone }] of Object.entries(addonsCfg)) {
-            const addonEntryFile = join(this.root, "addons", addonName, "index.js");
-            if (standalone) {
-                const addon = new ParallelAddon(addonEntryFile, addonName);
-
-                // Add and observer configuration at the next loop iteration
-                setImmediate(() => {
-                    this.loadAddon(addon).catch(console.error);
-                });
-                continue;
-            }
-
-            try {
-                /** @type {Addon} */
-                const addon = require(addonEntryFile);
-                if (addon instanceof Addon === false) {
-                    throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
-                }
-                synchronousAddonToLoad.push(this.loadAddon(addon));
-            }
-            catch (error) {
-                console.error(error);
-            }
-        }
-
-        // Wait for all Synchronous Addon to be fully loaded to send an "init" event!
-        for (const addon of await Promise.all(synchronousAddonToLoad)) {
-            addon.emit("init");
+        for (const [addonName] of Object.entries(addonsCfg)) {
+            // Setup configuration observable at the next loop iteration!
+            this.config.observableOf(`addons.${addonName}`).subscribe(
+                (curr) => {
+                    try {
+                        this.onAddonReconfiguration(addonName, curr);
+                    }
+                    catch (error) {
+                        console.error(error);
+                    }
+                },
+                console.error
+            );
         }
 
         // Setup initialization state to true
@@ -238,6 +211,7 @@ class Core {
     }
 
     /**
+     * @async
      * @private
      * @public
      * @method onAddonReconfiguration
@@ -247,14 +221,48 @@ class Core {
      * @param {AddonProperties} newConfig new addon Configuration
      * @returns {void} Return Async clojure
      */
-    onAddonReconfiguration(addonName, { active }) {
-        const addon = this._addons.get(addonName);
-        if (!addon.isStarted && !active) {
-            return;
+    async onAddonReconfiguration(addonName, { active, standalone }) {
+        /** @type {Addon | ParallelAddon} */
+        let addon = null;
+        const isStandalone = standalone === true;
+        if (!this._addons.has(addonName)) {
+            if (!active) {
+                return;
+            }
+            const addonEntryFile = join(this.root, "addons", addonName, "index.js");
+
+            try {
+                if (isStandalone) {
+                    addon = new ParallelAddon(addonEntryFile, addonName);
+                    addon.createForkProcesses();
+                    console.log(`Load (Parallel) addon with name => ${addonName}`);
+                }
+                else {
+                    addon = require(addonEntryFile);
+                    if (addon instanceof Addon === false) {
+                        throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
+                    }
+                    console.log(`Load (InRealm) addon with name => ${addonName}`);
+                }
+
+                this._addons.set(addonName, addon);
+                await this.loadAddon(addon);
+            }
+            catch (error) {
+                console.error(error);
+            }
+        }
+        else {
+            addon = this._addons.get(addonName);
         }
 
         try {
-            addon.executeCallback(active ? "start" : "stop");
+            if (addon instanceof ParallelAddon && active && isStandalone) {
+                addon.createForkProcesses();
+            }
+            setImmediate(() => {
+                addon.executeCallback(active ? "start" : "stop");
+            });
         }
         catch (error) {
             console.error(error);

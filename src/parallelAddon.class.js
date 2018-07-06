@@ -37,17 +37,9 @@ class ParallelAddon extends events {
         this.root = root;
         this.addonName = addonName;
         this.isStarted = false;
+        this.cp = null;
         this.messageEvents = new events.EventEmitter();
         this.messageEvents.setMaxListeners(3);
-
-        /** @type {NodeJS.ChildProcesses} */
-        this.cp = fork(forkWrapper, [this.root]);
-        this.cp.on("error", console.error);
-        this.cp.on("message", this.messageHandler.bind(this));
-        this.cp.on("close", (code) => {
-            console.log(`Addon ${addonName} closed with signal code: ${code}`);
-        });
-
 
         // Listen for event
         this.on("start", () => {
@@ -56,6 +48,26 @@ class ParallelAddon extends events {
 
         this.on("stop", () => {
             this.isStarted = false;
+            this.cp = null;
+        });
+    }
+
+    /**
+     * @method createForkProcesses
+     * @memberof ParallelAddon
+     * @returns {void}
+     */
+    createForkProcesses() {
+        if (!is.nullOrUndefined(this.cp)) {
+            return;
+        }
+
+        /** @type {NodeJS.ChildProcesses} */
+        this.cp = fork(forkWrapper, [this.root]);
+        this.cp.on("error", console.error);
+        this.cp.on("message", this.messageHandler.bind(this));
+        this.cp.on("close", (code) => {
+            console.log(`Addon ${this.addonName} closed with signal code: ${code}`);
         });
     }
 
