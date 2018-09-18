@@ -4,7 +4,6 @@ const { fork } = require("child_process");
 const events = require("events");
 
 // Require Third-party Dependencies
-const is = require("@sindresorhus/is");
 const uuidv4 = require("uuid/v4");
 
 // Fork wrapper path
@@ -26,10 +25,10 @@ class ParallelAddon extends events {
     constructor(root, addonName) {
         super();
         this.on("error", console.error);
-        if (!is.string(root)) {
+        if (typeof root !== "string") {
             throw new TypeError("EmulateAddon->root should be typeof <string>");
         }
-        if (!is.string(addonName)) {
+        if (typeof addonName !== "string") {
             throw new TypeError("EmulateAddon->addonName should be typeof <string>");
         }
 
@@ -58,7 +57,7 @@ class ParallelAddon extends events {
      * @returns {void}
      */
     createForkProcesses() {
-        if (!is.nullOrUndefined(this.cp)) {
+        if (typeof this.cp !== undefined && this.cp !== null) {
             return;
         }
 
