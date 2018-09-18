@@ -7,11 +7,17 @@ const events = require("events");
 const uuidv4 = require("uuid/v4");
 
 // Fork wrapper path
-const forkWrapper = join(__dirname, "forked.container.js");
+const FORK_CONTAINER_PATH = join(__dirname, "forked.container.js");
 
 /**
  * @class ParallelAddon
  * @classdesc Addon Emulation!
+ *
+ * @property {String} root Addon root path
+ * @property {String} addonName name of the Wrappered addon
+ * @property {Boolean} isStarted Boolean value to know if the addon is started or not
+ * @property {ChildProcesses} cp Node.JS Child Processes reference!
+ * @property {NodeJS.EventEmitter} messageEvents Message events container
  */
 class ParallelAddon extends events {
 
@@ -62,7 +68,7 @@ class ParallelAddon extends events {
         }
 
         /** @type {NodeJS.ChildProcesses} */
-        this.cp = fork(forkWrapper, [this.root]);
+        this.cp = fork(FORK_CONTAINER_PATH, [this.root]);
         this.cp.on("error", console.error);
         this.cp.on("message", this.messageHandler.bind(this));
         this.cp.on("close", (code) => {
