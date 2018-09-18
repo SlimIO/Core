@@ -1,3 +1,5 @@
+require("make-promises-safe");
+
 // Get the forked addon !
 const [addonPath] = process.argv.slice(2);
 if (typeof addonPath !== "string") {
