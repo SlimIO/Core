@@ -12,6 +12,12 @@ const Addon = require("@slimio/addon");
 const { searchForAddons } = require("./utils");
 const ParallelAddon = require("./parallelAddon.class");
 
+// SCRIPT CONSTANTS
+const AVAILABLE_CPU_LEN = os.cpus().length;
+if (AVAILABLE_CPU_LEN === 1) {
+    console.log("SlimIO Core - Only one vCPU available!");
+}
+
 /** @typedef {{ active: boolean; standalone?: boolean }} AddonProperties */
 /** @typedef {{[key: string]: AddonProperties}} AddonCFG */
 
@@ -225,7 +231,7 @@ class Core {
         /** @type {Addon | ParallelAddon} */
         let addon = null;
 
-        const isStandalone = standalone === true;
+        const isStandalone = AVAILABLE_CPU_LEN > 1 ? standalone === true : false;
         if (!this._addons.has(addonName)) {
             if (!active) {
                 return;
