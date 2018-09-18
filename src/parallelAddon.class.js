@@ -127,14 +127,16 @@ class ParallelAddon extends events {
      * @returns {void}
      */
     messageHandler({ target = "message", body, messageId = "", args }) {
-        if (target === "start" || target === "stop") {
-            this.emit(target);
-        }
-        else if (target === "message") {
-            this.messageEvents.emit(messageId, body);
-        }
-        else {
-            this.emit("message", messageId, target, args);
+        switch (target) {
+            case "start":
+            case "stop":
+                this.emit(target);
+                break;
+            case "message":
+                this.messageEvents.emit(messageId, body);
+                break;
+            default:
+                this.emit("message", messageId, target, args);
         }
     }
 
