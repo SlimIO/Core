@@ -53,7 +53,7 @@ class Core {
             createOnNoEntry: true,
             writeOnSet: true,
             autoReload: true,
-            defaultSchema: Core.DEFAULTSchema,
+            defaultSchema: Core.DEFAULT_SCHEMA,
             reloadDelay: options.autoReload ? 500 : void 0
         });
     }
@@ -178,7 +178,7 @@ class Core {
      */
     async initialize() {
         // Read the agent (core) configuration file
-        await this.config.read(Core.DEFAULTConfiguration);
+        await this.config.read(Core.DEFAULT_CONFIGURATION);
 
         /** @type {AddonCFG} */
         let addonsCfg = this.config.get("addons");
@@ -243,13 +243,14 @@ class Core {
                     if (addon instanceof Addon === false) {
                         throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
                     }
-                    console.log(`Load (InRealm) addon with name => ${addonName}`);
+                    console.log(`Load (In same process as core) addon with name => ${addonName}`);
                 }
 
                 this._addons.set(addonName, addon);
                 await this.loadAddon(addon);
             }
             catch (error) {
+                // TODO: Review how to handle this error!
                 console.error(error);
             }
         }
@@ -266,6 +267,7 @@ class Core {
             });
         }
         catch (error) {
+            // TODO: Review how to handle this error!
             console.error(error);
         }
     }
@@ -300,7 +302,7 @@ class Core {
 }
 
 // Default Core Configuration
-Core.DEFAULTConfiguration = {
+Core.DEFAULT_CONFIGURATION = {
     hostname: os.hostname(),
     platform: os.platform(),
     release: os.release(),
@@ -308,7 +310,7 @@ Core.DEFAULTConfiguration = {
 };
 
 // Default Core Configuration JSON Schema
-Core.DEFAULTSchema = require("./config/agent.schema.json");
+Core.DEFAULT_SCHEMA = require("./config/agent.schema.json");
 
 // Export Core class
 module.exports = Core;
