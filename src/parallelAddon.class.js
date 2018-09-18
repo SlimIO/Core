@@ -6,8 +6,9 @@ const events = require("events");
 // Require Third-party Dependencies
 const uuidv4 = require("uuid/v4");
 
-// Fork wrapper path
+// SCRIPT CONSTANTS
 const FORK_CONTAINER_PATH = join(__dirname, "forked.container.js");
+const MESSAGE_TIMEOUT_MS = 250;
 
 /**
  * @class ParallelAddon
@@ -30,7 +31,10 @@ class ParallelAddon extends events {
      */
     constructor(root, addonName) {
         super();
+        // Listen for errors on the events container!
         this.on("error", console.error);
+
+        // Check arguments types (they should be both string) !
         if (typeof root !== "string") {
             throw new TypeError("EmulateAddon->root should be typeof <string>");
         }
@@ -38,15 +42,16 @@ class ParallelAddon extends events {
             throw new TypeError("EmulateAddon->addonName should be typeof <string>");
         }
 
-        // Setup properties
+        // Setup ParallelAddon properties
         this.root = root;
         this.addonName = addonName;
         this.isStarted = false;
+        /** @type {ChildProcess} */
         this.cp = null;
         this.messageEvents = new events.EventEmitter();
         this.messageEvents.setMaxListeners(3);
 
-        // Listen for event
+        // Listen for events "start" and "stop"
         this.on("start", () => {
             this.isStarted = true;
         });
@@ -63,17 +68,19 @@ class ParallelAddon extends events {
      * @returns {void}
      */
     createForkProcesses() {
+        // If there is already a Child Processses running, then return
         if (typeof this.cp !== undefined && this.cp !== null) {
-            return;
+            return void 0;
         }
 
-        /** @type {NodeJS.ChildProcesses} */
         this.cp = fork(FORK_CONTAINER_PATH, [this.root]);
         this.cp.on("error", console.error);
         this.cp.on("message", this.messageHandler.bind(this));
         this.cp.on("close", (code) => {
             console.log(`Addon ${this.addonName} closed with signal code: ${code}`);
         });
+
+        return void 0;
     }
 
     /**
@@ -103,8 +110,10 @@ class ParallelAddon extends events {
 
             timer = setTimeout(() => {
                 this.messageEvents.removeListener(messageId, listener);
-                reject(new Error("timeout"));
-            }, 250);
+                reject(new Error(
+                    `(ParrallelAddon) Message id ${messageId} reached the timeout time of ${MESSAGE_TIMEOUT_MS}`
+                ));
+            }, MESSAGE_TIMEOUT_MS);
         });
     }
 
