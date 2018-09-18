@@ -89,6 +89,7 @@ class ParallelAddon extends events {
         return new Promise((resolve, reject) => {
             /** @type {NodeJS.Timer} */
             let timer = null;
+
             function listener(body) {
                 clearTimeout(timer);
                 resolve(body);

@@ -1,17 +1,17 @@
 {
     "hostname": "DESKTOP-UHHC0KF",
     "platform": "win32",
-    "release": "10.0.16299",
+    "release": "10.0.17134",
     "addons": {
         "cpu": {
             "active": true,
-            "isolate": false,
-            "standalone": true
+            "standalone": false,
+            "isolate": false
         },
         "ondemand": {
             "active": true,
-            "isolate": false,
-            "standalone": true
+            "standalone": false,
+            "isolate": false
         }
     }
 }

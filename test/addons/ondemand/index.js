@@ -14,7 +14,9 @@ async function interval() {
 
     return "hello world!";
 }
-ondemand.registerCallback(interval).schedule(new Scheduler({ interval: 1 }));
+ondemand
+    .registerCallback(interval)
+    .schedule(new Scheduler({ interval: 1 }));
 
 ondemand.once("init", () => {
     console.log("addon ondemand initialized");

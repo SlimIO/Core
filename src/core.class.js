@@ -224,6 +224,7 @@ class Core {
     async onAddonReconfiguration(addonName, { active, standalone }) {
         /** @type {Addon | ParallelAddon} */
         let addon = null;
+
         const isStandalone = standalone === true;
         if (!this._addons.has(addonName)) {
             if (!active) {
