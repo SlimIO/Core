@@ -1,11 +1,25 @@
-// Require Internal Dependencies
-const Addon = require("@slimio/addon");
-
 // Get the forked addon !
 const [addonPath] = process.argv.slice(2);
 if (typeof addonPath !== "string") {
     throw new TypeError("fork.wrapper --addonPath should be typeof <string>");
 }
+
+// Require Internal Dependencies
+const Addon = require("@slimio/addon");
+
+/**
+ * @type {Addon}
+ * @todo Replace require by lazy import when possible!
+ */
+const addon = require(addonPath);
+if (!(addon instanceof Addon)) {
+    throw new TypeError("fork.wrapper addon entry file should be a SlimIO Addon");
+}
+
+// Catch SIGINT Signal
+process.on("SIGINT", (signal) => {
+    console.log(`Receiving signal : ${signal}`);
+});
 
 /**
  * @typedef {Object} ProcessesMessage
@@ -15,13 +29,23 @@ if (typeof addonPath !== "string") {
  * @property {any[]} args
  */
 
-async function main() {
-    /** @type {Addon} */
-    const addon = require(addonPath);
-    if (addon instanceof Addon === false) {
-        throw new TypeError("fork.wrapper addon entry file should be a SlimIO Addon");
-    }
+/**
+ * @func sendMessage
+ * @param {!String} messageId messageId
+ * @param {!String} target message target
+ * @param {*} args args
+ * @returns {void}
+ */
+function sendMessage(messageId, target, args) {
+    process.send({ messageId, target, args });
+}
 
+/**
+ * @async
+ * @function main
+ * @return {Promise<void>}
+ */
+async function main() {
     /** @type {{name: string}} */
     const { name } = await addon.executeCallback("get_info");
 
@@ -52,17 +76,6 @@ async function main() {
     }
     process.on("message", message);
 
-    /**
-     * @func sendMessage
-     * @param {!String} messageId messageId
-     * @param {!String} target message target
-     * @param {*} args args
-     * @returns {void}
-     */
-    function sendMessage(messageId, target, args) {
-        process.send({ messageId, target, args });
-    }
-
     // Setup start listener
     addon.on("start", () => {
         console.log(`Addon ${name} started!`);
@@ -80,12 +93,7 @@ async function main() {
 }
 
 // Call main handler
-main().catch((error) => {
+main().catch(function mainErrorHandler(error) {
     console.error(error);
     process.exit(1);
-});
-
-// Catch SIGINT Signal
-process.on("SIGINT", (signal) => {
-    console.log(`Receiving signal : ${signal}`);
 });
