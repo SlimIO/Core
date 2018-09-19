@@ -144,6 +144,9 @@ class Core {
              */
             messageHandler = async(messageId, target, args) => {
                 const responseBody = await this.routingTable.get(target)(args);
+                if (!addon.observers.has(messageId)) {
+                    return;
+                }
 
                 const observer = addon.observers.get(messageId);
                 observer.next(responseBody);
