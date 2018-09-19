@@ -1,4 +1,5 @@
 // Require Node.JS dependencies
+const { mkdir, writeFile } = require("fs").promises;
 const { join, isAbsolute } = require("path");
 const os = require("os");
 
@@ -183,6 +184,17 @@ class Core {
      * @throws {TypeError}
      */
     async initialize() {
+        // Create root debug directory
+        try {
+            await mkdir(join(this.root, "debug"));
+        }
+        catch (error) {
+            if (error.code !== "EEXIST") {
+                throw error;
+            }
+            console.log("(Core) Root /debug directory already created!");
+        }
+
         // Read the agent (core) configuration file
         await this.config.read(Core.DEFAULT_CONFIGURATION);
 
@@ -217,6 +229,29 @@ class Core {
     }
 
     /**
+     * @public
+     * @method generateDump
+     * @desc Dump an error!
+     * @memberof Core#
+     * @param {any} error error that have to be dumped!
+     * @returns {String}
+     */
+    generateDump(error) {
+        const timestamp = Date.now();
+        const dumpFile = join(this.root, "debug", `debug_${timestamp}.json`);
+        const dumpStr = JSON.stringify({
+            date: new Date(timestamp).toString(),
+            code: error.code || null,
+            message: error.message || "",
+            stack: error.stack ? error.stack.split("\n") : ""
+        }, null, 4);
+        writeFile(dumpFile, dumpStr).catch(console.error);
+
+        return dumpFile;
+    }
+
+
+    /**
      * @async
      * @private
      * @public
@@ -234,7 +269,7 @@ class Core {
         const isStandalone = AVAILABLE_CPU_LEN > 1 ? standalone === true : false;
         if (!this._addons.has(addonName)) {
             if (!active) {
-                return;
+                return void 0;
             }
             const addonEntryFile = join(this.root, "addons", addonName, "index.js");
 
@@ -256,26 +291,33 @@ class Core {
                 await this.loadAddon(addon);
             }
             catch (error) {
-                // TODO: Review how to handle this error!
-                console.error(error);
+                const dumpFile = this.generateDump(error);
+                console.log(`An error occured while loading addon ${addonName} (ERROR dumped in: ${dumpFile})`);
+
+                return void 0;
             }
         }
         else {
             addon = this._addons.get(addonName);
         }
 
+        const stateToBeTriggered = active ? "start" : "stop";
         try {
             if (addon instanceof ParallelAddon && active && isStandalone) {
                 addon.createForkProcesses();
             }
             setImmediate(() => {
-                addon.executeCallback(active ? "start" : "stop");
+                addon.executeCallback(stateToBeTriggered);
             });
         }
         catch (error) {
-            // TODO: Review how to handle this error!
-            console.error(error);
+            const dumpFile = this.generateDump(error);
+            console.log(
+                `An error occured while exec ${stateToBeTriggered} on addon ${addonName} (ERROR dumped in: ${dumpFile})`
+            );
         }
+
+        return void 0;
     }
 
     /**
