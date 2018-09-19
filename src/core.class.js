@@ -157,6 +157,7 @@ class Core {
         // Setup start listener
         addon.prependListener("start", () => {
             for (const callback of callbacks) {
+                console.log(`[CORE] Setup routing table: ${name}.${callback}`);
                 this.routingTable.set(`${name}.${callback}`, (args) => {
                     return addon.executeCallback(callback, args);
                 });
@@ -194,7 +195,7 @@ class Core {
             if (error.code !== "EEXIST") {
                 throw error;
             }
-            console.log("(Core) Root /debug directory already created!");
+            console.log("[CORE] Root /debug directory already created!");
         }
 
         // Read the agent (core) configuration file
