@@ -281,7 +281,7 @@ class Core {
                 }
                 else {
                     addon = require(addonEntryFile);
-                    if (addon instanceof Addon === false) {
+                    if (addon.constructor.name !== "Addon") {
                         throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
                     }
                     console.log(`Load (In same process as core) addon with name => ${addonName}`);
