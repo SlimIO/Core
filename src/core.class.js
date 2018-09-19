@@ -9,7 +9,6 @@ const is = require("@sindresorhus/is");
 
 // Require Internal Dependencies
 const Config = require("@slimio/config");
-const Addon = require("@slimio/addon");
 const { searchForAddons } = require("./utils");
 const ParallelAddon = require("./parallelAddon.class");
 
