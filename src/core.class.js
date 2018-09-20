@@ -45,8 +45,15 @@ class Core {
             throw new TypeError("dirname should be type <string>");
         }
 
-        // Setup class properties
-        this.root = dirname;
+        if (!isAbsolute(dirname)) {
+            throw new Error("Core.root->value should be an absolute system path!");
+        }
+
+        Reflect.defineProperty(this, "_root", {
+            dirname,
+            writable: true
+        });
+
         this.hasBeenInitialized = false;
 
         /** @type {Map<String, () => any>} */
@@ -82,25 +89,6 @@ class Core {
      */
     get root() {
         return Reflect.get(this, "_root");
-    }
-
-    /**
-     * @public
-     * @memberof Core#
-     * @member {String} root
-     * @param {!String} value system path
-     *
-     * @throws {Error}
-     */
-    set root(value) {
-        if (!isAbsolute(value)) {
-            throw new Error("Core.root->value should be an absolute system path!");
-        }
-
-        Reflect.defineProperty(this, "_root", {
-            value,
-            writable: true
-        });
     }
 
     /**
