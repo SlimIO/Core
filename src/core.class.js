@@ -50,7 +50,7 @@ class Core {
         }
 
         Reflect.defineProperty(this, "_root", {
-            dirname,
+            value: dirname,
             writable: true
         });
 

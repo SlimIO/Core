@@ -33,5 +33,12 @@ test("Initialization of Core", async function initCore(assert) {
 //     await core.initialize();
 // });
 
-
+test("getter addons", async function getterAddons(assert) {
+    const core = new Core(__dirname);
+    await core.initialize();
+    const addons = core.addons;
+    assert.is(is.array(addons), true);
+    console.log("Addons :");
+    console.log(addons);
+});
 
