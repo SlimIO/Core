@@ -328,10 +328,8 @@ class Core {
             this.addons.map((addon) => addon.executeCallback("stop"))
         );
 
-        // Close config (is not already closed!)
-        if (this.config.configHasBeenRead) {
-            await this.config.close();
-        }
+        await this.config.close();
+
         this.hasBeenInitialized = false;
     }
 
