@@ -9,7 +9,6 @@ const is = require("@sindresorhus/is");
 
 // Require Internal Dependencies
 const Config = require("@slimio/config");
-const Addon = require("@slimio/addon");
 const { searchForAddons } = require("./utils");
 const ParallelAddon = require("./parallelAddon.class");
 
@@ -133,6 +132,9 @@ class Core {
              */
             messageHandler = async(messageId, target, args) => {
                 const responseBody = await this.routingTable.get(target)(args);
+                if (!addon.observers.has(messageId)) {
+                    return;
+                }
 
                 const observer = addon.observers.get(messageId);
                 observer.next(responseBody);
@@ -143,6 +145,7 @@ class Core {
         // Setup start listener
         addon.prependListener("start", () => {
             for (const callback of callbacks) {
+                console.log(`[CORE] Setup routing table: ${name}.${callback}`);
                 this.routingTable.set(`${name}.${callback}`, (args) => {
                     return addon.executeCallback(callback, args);
                 });
@@ -180,7 +183,7 @@ class Core {
             if (error.code !== "EEXIST") {
                 throw error;
             }
-            console.log("(Core) Root /debug directory already created!");
+            console.log("[CORE] Root /debug directory already created!");
         }
 
         // Read the agent (core) configuration file
@@ -269,7 +272,7 @@ class Core {
                 }
                 else {
                     addon = require(addonEntryFile);
-                    if (addon instanceof Addon === false) {
+                    if (addon.constructor.name !== "Addon") {
                         throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
                     }
                     console.log(`Load (In same process as core) addon with name => ${addonName}`);
