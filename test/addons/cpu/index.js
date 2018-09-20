@@ -17,7 +17,7 @@ async function test() {
 cpu.registerCallback(test);
 
 cpu.on("start", () => {
-    addonInterval = setInterval(interval, 1000);
+    addonInterval = setInterval(interval, 3000);
 });
 
 cpu.on("stop", () => {

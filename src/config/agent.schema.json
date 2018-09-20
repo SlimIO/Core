@@ -7,11 +7,11 @@
         },
         "platform": {
             "type": "string",
-            "description": "Agent hostname"
+            "description": "Agent plateform"
         },
         "release": {
             "type": "string",
-            "description": "Agent hostname"
+            "description": "Agent release"
         },
         "addons": {
             "type": "object",

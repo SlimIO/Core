@@ -6,10 +6,11 @@ const Core = require("../src/core.class");
  * @returns {Promise<void>}
  */
 async function main() {
-    console.time("start_core");
+    // console.time("start_core");
     const core = new Core(__dirname);
     await core.initialize();
-    console.timeEnd("start_core");
+    // console.log(core);
+    // console.timeEnd("start_core");
 
     // Handle exit signal!
     process.on("SIGINT", async() => {
