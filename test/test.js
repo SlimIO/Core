@@ -6,10 +6,16 @@ const is = require("@sindresorhus/is");
 const Core = require("../index");
 
 test("Create Core", function createCore(assert) {
-    const error = assert.throws(() => {
+    let error;
+    error = assert.throws(() => {
         new Core(5);
     }, TypeError);
     assert.is(error.message, "dirname should be type <string>");
+
+    error = assert.throws(() => {
+        new Core("a string");
+    }, Error);
+    assert.is(error.message, "Core.root->value should be an absolute system path!");
 
     const core = new Core(__dirname);
     assert.is(core.constructor.name === "Core", true);
@@ -38,7 +44,18 @@ test("getter addons", async function getterAddons(assert) {
     await core.initialize();
     const addons = core.addons;
     assert.is(is.array(addons), true);
-    console.log("Addons :");
-    console.log(addons);
+    for (const addon of addons) {
+        assert.is(is.object(addon), true);
+        assert.is(addon.constructor.name === "Addon", true);
+    }
 });
 
+test("Exit core", async function exitCore(assert) {
+    const core = new Core(__dirname);
+
+    const error = await assert.throws(core.exit(), Error);
+    assert.is(error.message, "Core.exit - Cannot close unitialized core");
+
+    await core.initialize();
+    await core.exit();
+});
