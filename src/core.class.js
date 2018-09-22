@@ -44,6 +44,10 @@ class Core {
             throw new TypeError("dirname should be type <string>");
         }
 
+        if (!is.object(options)) {
+            throw new TypeError("options should be type <object>");
+        }
+
         if (!isAbsolute(dirname)) {
             throw new Error("Core.root->value should be an absolute system path!");
         }
@@ -257,7 +261,7 @@ class Core {
         /** @type {Addon | ParallelAddon} */
         let addon = null;
 
-        const isStandalone = AVAILABLE_CPU_LEN > 1 ? standalone === true : false;
+        const isStandalone = AVAILABLE_CPU_LEN > 1 ? standalone : false;
         if (!this._addons.has(addonName)) {
             if (!active) {
                 return void 0;

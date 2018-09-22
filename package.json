@@ -4,9 +4,9 @@
     "description": "Slim.IO Core",
     "main": "index.js",
     "scripts": {
-        "test": "npx ava --verbose",
+        "test": "node test/test.js",
         "doc": "npx jsdoc -c ./jsdoc.json -r",
-        "coverage": "npx nyc ava",
+        "coverage": "npx nyc node test/test.js",
         "report": "npx nyc report --reporter=html"
     },
     "repository": {
@@ -31,9 +31,9 @@
         "@escommunity/minami": "^1.0.0",
         "@slimio/eslint-config": "^1.1.7",
         "@types/es6-shim": "^0.31.37",
-        "@types/node": "^10.10.1",
-        "ava": "^0.25.0",
+        "@types/node": "^10.10.3",
         "eslint": "^5.6.0",
+        "japa": "^1.0.6",
         "nyc": "^13.0.1"
     },
     "dependencies": {

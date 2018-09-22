@@ -1,61 +1,177 @@
+// Require Node.JS Dependencies
+const {
+    rmdir,
+    promises: {
+        unlink,
+        writeFile,
+        readFile,
+        readdir,
+        access,
+        lstat
+    },
+    constants: { R_OK, X_OK }
+} = require("fs");
+const { join } = require("path");
+
 // Require Third-party dependencies
-const test = require("ava");
+const test = require("japa");
 const is = require("@sindresorhus/is");
 
 // Require package
 const Core = require("../index");
 
-test("Create Core", function createCore(assert) {
-    let error;
-    error = assert.throws(() => {
-        new Core(5);
-    }, TypeError);
-    assert.is(error.message, "dirname should be type <string>");
+function sleep(ms){
+    return new Promise(resolve=>{
+        setTimeout(resolve,ms)
+    })
+}
 
-    error = assert.throws(() => {
-        new Core("a string");
-    }, Error);
-    assert.is(error.message, "Core.root->value should be an absolute system path!");
+test.group("Default test", (group) => {
+    group.after(async() => {
+        const remove = [
+            "test/agent.json",
+            "test/debug",
+            "test/dirWithoutAddon/agent.json",
+            "test/dirWithoutAddon/debug"
+        ];
 
-    const core = new Core(__dirname);
-    assert.is(core.constructor.name === "Core", true);
-    assert.is(is.map(core.routingTable), true);
-    assert.is(is.boolean(core.hasBeenInitialized), true);
-    assert.is(is.object(core.config), true);
-    assert.is(core.hasBeenInitialized, false);
+        for (const elem of remove) {
+            try {
+                await access(elem, R_OK | X_OK);
+            }
+            catch (err) {
+                if (err.code === "ENOENT") {
+                    continue;
+                }
+            }
+            const stats = await lstat(elem);
+
+            if (stats.isFile()) {
+                await unlink(elem);
+            }
+            if (stats.isDirectory()) {
+                await rmdir(elem, (err) => {
+                    console.log(err);
+                });
+            }
+        }
+    });
+
+    test("Create Core", (assert) => {
+        assert.plan(8);
+        try { new Core(5); }
+        catch (error) {
+            assert.strictEqual(error.message, "dirname should be type <string>");
+        }
+
+        try { new Core(__dirname, 5); }
+        catch (error) {
+            assert.strictEqual(error.message, "options should be type <object>");
+        }
+
+        try { new Core("a string"); }
+        catch (error) {
+            assert.strictEqual(error.message, "Core.root->value should be an absolute system path!");
+        }
+
+        const core = new Core(__dirname);
+        assert.strictEqual(core.constructor.name, "Core", "core.constructor.name === \"Core\"");
+        assert.strictEqual(is.map(core.routingTable), true, "core.routingTable is a Map");
+        assert.isBoolean(core.hasBeenInitialized, "core.hasBeenInitialized is boolean");
+        assert.isObject(core.config, "core.config is object");
+        assert.strictEqual(core.hasBeenInitialized, false, "core.hasBeenInitialized === false");
+    });
+
+    test("Create Core with autoReload", (assert) => {
+        assert.plan(6);
+        const core = new Core(__dirname, { autoReload: true });
+        assert.strictEqual(core.constructor.name, "Core", "core.constructor.name === \"Core\"");
+        assert.strictEqual(is.map(core.routingTable), true, "core.routingTable is a Map");
+        assert.isBoolean(core.hasBeenInitialized, "core.hasBeenInitialized is boolean");
+        assert.isObject(core.config, "core.config is object");
+        assert.strictEqual(core.hasBeenInitialized, false, "core.hasBeenInitialized === false");
+        assert.strictEqual(core.config.reloadDelay, 500, "core.config.reloadDelay === 500");
+    });
+
+    test("Initialization of Core", async(assert) => {
+        assert.plan(4);
+        const core = new Core(__dirname);
+        await core.initialize();
+        assert.strictEqual(is.map(core.routingTable), true, "core.routingTable is Map");
+        assert.isBoolean(core.hasBeenInitialized, "core.hasBeenInitialized is boolean");
+        assert.isObject(core.config, "core.config is object");
+        assert.strictEqual(core.hasBeenInitialized, true, "core.hasBeenInitialized === true");
+    });
+
+    test("Create Core without addon", async(assert) => {
+        assert.plan(2);
+        const core = new Core(`${__dirname}/dirWithoutAddon`);
+        await core.initialize();
+        const addons = core.addons;
+        assert.isArray(addons, "addons is array");
+        assert.strictEqual(addons.length, 0, "addon.length === 0");
+    });
+
+    test("Getter addons", async(assert) => {
+        assert.plan(5);
+        const core = new Core(__dirname);
+        await core.initialize();
+        const addons = core.addons;
+        assert.isArray(addons, "addons is array");
+        for (const addon of addons) {
+            assert.isObject(addon, "addon is object");
+            assert.strictEqual(addon.constructor.name, "Addon", "addon.constructor.name === \"Addon\"");
+        }
+    });
+
+    test("Exit core", async(assert) => {
+        assert.plan(1);
+        const core = new Core(__dirname);
+        try { await core.exit(); }
+        catch (error) {
+            assert.strictEqual(error.message, "Core.exit - Cannot close unitialized core");
+        }
+
+        await core.initialize();
+        await core.exit();
+    });
 });
 
-test("Initialization of Core", async function initCore(assert) {
-    const core = new Core(__dirname);
-    await core.initialize();
-    assert.is(is.map(core.routingTable), true);
-    assert.is(is.boolean(core.hasBeenInitialized), true);
-    assert.is(is.object(core.config), true);
-    assert.is(core.hasBeenInitialized, true);
-});
+test.group("Other Config file", (group) => {
 
-// test("Create Core with dir without addon", async function createCoreWithoutAddon(assert) {
-//     const core = new Core(`${__dirname}/dirWithoutAddon`);
-//     await core.initialize();
-// });
+    group.afterEach(async() => {
+        await unlink(join(__dirname, "agent.json"));
+    });
 
-test("getter addons", async function getterAddons(assert) {
-    const core = new Core(__dirname);
-    await core.initialize();
-    const addons = core.addons;
-    assert.is(is.array(addons), true);
-    for (const addon of addons) {
-        assert.is(is.object(addon), true);
-        assert.is(addon.constructor.name === "Addon", true);
-    }
-});
+    test("fakeAddon", async(assert) => {
+        const fakeAddonFile = "function test() { return 5 }\nmodule.exports = test;\n"
+        const fakeAddonPath = join(__dirname, "addons/fakeAddon");
+        await writeFile(join(fakeAddonPath, "index.js"), fakeAddonFile);
 
-test("Exit core", async function exitCore(assert) {
-    const core = new Core(__dirname);
+        const core = new Core(__dirname);
+        await core.initialize();
 
-    const error = await assert.throws(core.exit(), Error);
-    assert.is(error.message, "Core.exit - Cannot close unitialized core");
+        await unlink(join(fakeAddonPath, "index.js"));
+        const debugDir = join(__dirname, "debug");
+        let files = await readdir(debugDir);
+        assert.lengthOf(files, 1, "Must be one file in debug directory");
+        for (const file of files) {
+            await unlink(join(debugDir, file));
+        }
+        files = await readdir(debugDir);
+        assert.lengthOf(files, 0, "debug directory must be clear");
+        await core.exit();
+    });
 
-    await core.initialize();
-    await core.exit();
+    test("desactive an addon", async(assert) => {
+        const core = new Core(__dirname);
+        await core.initialize();
+        await sleep(50);
+        const agentJson = JSON.parse(await readFile(join(__dirname, "agent.json"), "utf-8"));
+        assert.isObject(agentJson, "agentJson is object");
+        await core.exit();
+        // console.log(JSON.parse(agentJson));
+        // agentJson.addons.
+
+    });
 });
