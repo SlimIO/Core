@@ -39,7 +39,7 @@
     "dependencies": {
         "@sindresorhus/is": "^0.11.0",
         "@slimio/addon": "^0.1.0",
-        "@slimio/config": "^0.4.0",
+        "@slimio/config": "^0.6.0",
         "make-promises-safe": "^1.1.0",
         "uuid": "^3.3.2"
     }

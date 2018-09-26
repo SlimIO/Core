@@ -20,14 +20,15 @@ const is = require("@sindresorhus/is");
 // Require package
 const Core = require("../index");
 
-function sleep(ms){
-    return new Promise(resolve=>{
-        setTimeout(resolve,ms)
-    })
+function sleep(ms) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
 }
 
 test.group("Default test", (group) => {
     group.after(async() => {
+        console.log("ReMOVE FILE AGENT GROUP");
         const remove = [
             "test/agent.json",
             "test/debug",
@@ -97,10 +98,15 @@ test.group("Default test", (group) => {
         assert.plan(4);
         const core = new Core(__dirname);
         await core.initialize();
-        assert.strictEqual(is.map(core.routingTable), true, "core.routingTable is Map");
-        assert.isBoolean(core.hasBeenInitialized, "core.hasBeenInitialized is boolean");
-        assert.isObject(core.config, "core.config is object");
-        assert.strictEqual(core.hasBeenInitialized, true, "core.hasBeenInitialized === true");
+        await new Promise((resolve) => {
+            core.config.once("configWritten", () => {
+                assert.strictEqual(is.map(core.routingTable), true, "core.routingTable is Map");
+                assert.isBoolean(core.hasBeenInitialized, "core.hasBeenInitialized is boolean");
+                assert.strictEqual(core.hasBeenInitialized, true, "core.hasBeenInitialized === true");
+                assert.isObject(core.config, "core.config is object");
+                resolve();
+            });
+        });
     });
 
     test("Create Core without addon", async(assert) => {
@@ -143,7 +149,7 @@ test.group("Other Config file", (group) => {
         await unlink(join(__dirname, "agent.json"));
     });
 
-    test("fakeAddon", async(assert) => {
+    test("FakeAddon", async(assert) => {
         const fakeAddonFile = "function test() { return 5 }\nmodule.exports = test;\n"
         const fakeAddonPath = join(__dirname, "addons/fakeAddon");
         await writeFile(join(fakeAddonPath, "index.js"), fakeAddonFile);
@@ -163,15 +169,25 @@ test.group("Other Config file", (group) => {
         await core.exit();
     });
 
-    test("desactive an addon", async(assert) => {
+    test("Desactivate an addon", async(assert) => {
         const core = new Core(__dirname);
         await core.initialize();
-        await sleep(50);
-        const agentJson = JSON.parse(await readFile(join(__dirname, "agent.json"), "utf-8"));
-        assert.isObject(agentJson, "agentJson is object");
-        await core.exit();
-        // console.log(JSON.parse(agentJson));
-        // agentJson.addons.
+        core.config.once("configWrited", async() => {
+            console.log("CONFIG WRITTEN");
+            assert.isTrue(core.config.get("addons.ondemand.active"), "addons.ondemand.active === TRUE");
+            core.config.set("addons.ondemand.active", false);
+            // await core.config.writeOnDisk();
+            assert.isFalse(core.config.get("addons.ondemand.active"), "addons.ondemand.active === FALSE");
+            const addons = core._addons;
+            await new Promise((resolve) => {
+                addons.get("ondemand").on("stop", () => {
+                    resolve();
+                });
+            });
+        });
 
+        // console.log(agentJson);
+        // await writeFile(join(__dirname, "agent.json"), JSON.stringify(agentJson, null, 4));
+        // await core.exit();
     });
 });

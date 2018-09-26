@@ -260,7 +260,6 @@ class Core {
     async onAddonReconfiguration(addonName, { active, standalone }) {
         /** @type {Addon | ParallelAddon} */
         let addon = null;
-
         const isStandalone = AVAILABLE_CPU_LEN > 1 ? standalone : false;
         if (!this._addons.has(addonName)) {
             if (!active) {
