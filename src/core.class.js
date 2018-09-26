@@ -14,6 +14,7 @@ const ParallelAddon = require("./parallelAddon.class");
 
 // SCRIPT CONSTANTS
 const AVAILABLE_CPU_LEN = os.cpus().length;
+/* istanbul ignore if */
 if (AVAILABLE_CPU_LEN === 1) {
     console.log("SlimIO Core - Only one vCPU available!");
 }

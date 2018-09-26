@@ -4,6 +4,7 @@ const {
     promises: {
         unlink,
         writeFile,
+        readFile,
         readdir,
         access,
         lstat
@@ -20,9 +21,15 @@ const is = require("@sindresorhus/is");
 const Core = require("../index");
 const { searchForAddons } = require("../src/utils.js");
 
+function sleep(ms) {
+    return new Promise((resolve) => {
+        setTimeout(resolve, ms);
+    });
+}
+
 test.group("Default test", (group) => {
     group.after(async() => {
-        console.log("ReMOVE FILE AGENT GROUP");
+        console.log("REMOVE FILE AGENT GROUP");
         const remove = [
             "test/agent.json",
             "test/debug",
@@ -54,17 +61,23 @@ test.group("Default test", (group) => {
 
     test("Create Core", (assert) => {
         assert.plan(8);
-        try { new Core(5); }
+        try {
+            new Core(5);
+        }
         catch (error) {
             assert.strictEqual(error.message, "dirname should be type <string>");
         }
 
-        try { new Core(__dirname, 5); }
+        try {
+            new Core(__dirname, 5);
+        }
         catch (error) {
             assert.strictEqual(error.message, "options should be type <object>");
         }
 
-        try { new Core("a string"); }
+        try {
+            new Core("a string");
+        }
         catch (error) {
             assert.strictEqual(error.message, "Core.root->value should be an absolute system path!");
         }
@@ -90,6 +103,13 @@ test.group("Default test", (group) => {
 
     test("Initialization of Core", async(assert) => {
         assert.plan(4);
+        try {
+            await access(join(__dirname, "agent.json"), R_OK | X_OK);
+            await unlink(join(__dirname, "agent.json"));
+        }
+        catch (error) {
+            console.error;
+        }
         const core = new Core(__dirname);
         await core.initialize();
         await new Promise((resolve) => {
@@ -127,7 +147,9 @@ test.group("Default test", (group) => {
     test("Exit core", async(assert) => {
         assert.plan(1);
         const core = new Core(__dirname);
-        try { await core.exit(); }
+        try {
+            await core.exit();
+        }
         catch (error) {
             assert.strictEqual(error.message, "Core.exit - Cannot close unitialized core");
         }
@@ -199,14 +221,85 @@ test.group("Other Config file", (group) => {
 });
 
 test("Utils.js searchForAddons", async(assert) => {
-    try { await searchForAddons(5); }
+    try {
+        await searchForAddons(5);
+    }
     catch (error) {
         assert.strictEqual(error.message, "utils.searchForAddons->root should be typeof <string>");
     }
 
     // test if (!stat.isDirectory()) { continue; }
-    try { await searchForAddons(join(__dirname, "addonsDir")); }
+    try {
+        await searchForAddons(join(__dirname, "addonsDir"));
+    }
     catch (error) {
         console.log(error);
+    }
+});
+
+test("Utils.js searchForAddons", async(assert) => {
+    try {
+        await searchForAddons(5);
+    }
+    catch (error) {
+        assert.strictEqual(error.message, "utils.searchForAddons->root should be typeof <string>");
+    }
+
+    // test if (!stat.isDirectory()) { continue; }
+    try {
+        await searchForAddons(join(__dirname, "addonsDir"));
+    }
+    catch (error) {
+        console.log(error);
+    }
+});
+
+test("Generate empty dump error", async(assert) => {
+    const core = new Core(__dirname);
+    await core.initialize();
+
+    const dumpFile = core.generateDump({});
+    const dumpStr = await readFile(dumpFile, "utf-8");
+    assert.isString(dumpStr, "dumpStr is string");
+
+    const dump = JSON.parse(dumpStr);
+    assert.isString(dump.date, "dump.date is string");
+    assert.isNull(dump.code, "dump.code is null");
+    assert.isString(dump.message, "dump.message is string");
+    assert.isEmpty(dump.message, "dump.message is empty string");
+    assert.isString(dump.stack, "dump.stack is string");
+    assert.isEmpty(dump.stack, "dump.stack is empty string");
+
+    await unlink(dumpFile);
+});
+
+test("Generate basic dump error", async(assert) => {
+    const core = new Core(__dirname);
+    await core.initialize();
+
+    const dumpFile = core.generateDump({
+        code: "ABC",
+        message: "test",
+        stack: "test1\ntest2"
+    });
+    sleep(50);
+    const dumpStr = await readFile(dumpFile, "utf-8");
+    assert.isString(dumpStr, "dumpStr is string");
+
+    const dump = JSON.parse(dumpStr);
+    assert.isString(dump.date, "dump.date is string");
+    assert.strictEqual(dump.code, "ABC", "dump.code === \"ABC\"");
+    assert.strictEqual(dump.message, "test", "dump.message === \"test\"");
+    assert.deepEqual(dump.stack, ["test1", "test2"], "dump.stack == [\"test1\", \"test2\"]");
+    await unlink(dumpFile);
+});
+
+// Comment this function to access debug files
+test("Cleen Debug", async() => {
+    const debugDir = join(__dirname, "debug");
+
+    const files = await readdir(debugDir);
+    for (const file of files) {
+        await unlink(join(debugDir, file));
     }
 });

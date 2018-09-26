@@ -21,7 +21,8 @@ declare class Core {
     private loadAddon(addon: Addon): Promise<Addon>;
     private onAddonReconfiguration(addonName: string, newConfig: Core.AddonsCFG): void;
     initialize(): Promise<this>;
-    exit(): Promise<void>
+    generateDump(error: object): string;
+    exit(): Promise<void>;
 }
 
 /**
