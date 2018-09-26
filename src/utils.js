@@ -27,7 +27,7 @@ const {
  */
 async function searchForAddons(root) {
     if (typeof root !== "string") {
-        throw new TypeError("utils.searchForValidAddonsOnDisk->root should be typeof <string>");
+        throw new TypeError("utils.searchForAddons->root should be typeof <string>");
     }
     const rootFiles = new Set(await readdir(root));
     if (!rootFiles.has("addons")) {

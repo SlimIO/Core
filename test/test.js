@@ -4,7 +4,6 @@ const {
     promises: {
         unlink,
         writeFile,
-        readFile,
         readdir,
         access,
         lstat
@@ -19,12 +18,7 @@ const is = require("@sindresorhus/is");
 
 // Require package
 const Core = require("../index");
-
-function sleep(ms) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-}
+const { searchForAddons } = require("../src/utils.js");
 
 test.group("Default test", (group) => {
     group.after(async() => {
@@ -166,14 +160,12 @@ test.group("Other Config file", (group) => {
         }
         files = await readdir(debugDir);
         assert.lengthOf(files, 0, "debug directory must be clear");
-        await core.exit();
     });
 
     test("Desactivate an addon", async(assert) => {
         const core = new Core(__dirname);
         await core.initialize();
-        core.config.once("configWrited", async() => {
-            console.log("CONFIG WRITTEN");
+        core.config.once("configWritten", async() => {
             assert.isTrue(core.config.get("addons.ondemand.active"), "addons.ondemand.active === TRUE");
             core.config.set("addons.ondemand.active", false);
             // await core.config.writeOnDisk();
@@ -185,9 +177,36 @@ test.group("Other Config file", (group) => {
                 });
             });
         });
-
-        // console.log(agentJson);
-        // await writeFile(join(__dirname, "agent.json"), JSON.stringify(agentJson, null, 4));
-        // await core.exit();
     });
+
+    test("Addon desactivate by default in config", async(assert) => {
+        const configObj = {
+            addons: {
+                cpu: {
+                    active: false,
+                    standalone: false
+                }
+            }
+        };
+        await writeFile("test/agent.json", JSON.stringify(configObj, null, 4));
+        
+        const core = new Core(__dirname);
+        await core.initialize();
+        core.config.once("configWritten", () => {
+            assert.isFalse(core.config.addons.cpu.active);
+        });
+    });
+});
+
+test("Utils.js searchForAddons", async(assert) => {
+    try { await searchForAddons(5); }
+    catch (error) {
+        assert.strictEqual(error.message, "utils.searchForAddons->root should be typeof <string>");
+    }
+
+    // test if (!stat.isDirectory()) { continue; }
+    try { await searchForAddons(join(__dirname, "addonsDir")); }
+    catch (error) {
+        console.log(error);
+    }
 });
