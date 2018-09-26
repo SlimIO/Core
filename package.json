@@ -6,7 +6,7 @@
     "scripts": {
         "test": "node test/test.js",
         "doc": "npx jsdoc -c ./jsdoc.json -r",
-        "coverage": "npx nyc node test/test.js",
+        "coverage": "npx nyc npm test",
         "report": "npx nyc report --reporter=html"
     },
     "repository": {
