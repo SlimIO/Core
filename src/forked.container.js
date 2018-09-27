@@ -78,6 +78,12 @@ async function main() {
     }
     process.on("message", message);
 
+    // Setup ready listener
+    addon.on("ready", () => {
+        console.log(`Addon ${name} ready!`);
+        process.send({ target: "ready" });
+    });
+
     // Setup start listener
     addon.on("start", () => {
         console.log(`Addon ${name} started!`);

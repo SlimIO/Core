@@ -130,6 +130,7 @@ class ParallelAddon extends events {
         switch (target) {
             case "start":
             case "stop":
+            case "ready":
                 this.emit(target);
                 break;
             case "message":

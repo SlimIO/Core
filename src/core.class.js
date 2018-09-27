@@ -1,6 +1,7 @@
 // Require Node.JS dependencies
 const { mkdir, writeFile } = require("fs").promises;
 const { join, isAbsolute } = require("path");
+const { Duplex } = require("stream");
 const os = require("os");
 
 // Require Third-party dependencies
@@ -152,6 +153,13 @@ class Core {
                 observer.complete();
             };
         }
+
+        // Setup ready listener
+        addon.prependListener("ready", () => {
+            for (const addon of this._addons.values()) {
+                addon.emit("addonLoaded", name);
+            }
+        });
 
         // Setup start listener
         addon.prependListener("start", () => {
