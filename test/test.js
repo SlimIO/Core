@@ -166,7 +166,7 @@ test.group("Other Config file", (group) => {
     });
 
     test("FakeAddon", async(assert) => {
-        const fakeAddonFile = "function test() { return 5 }\nmodule.exports = test;\n"
+        const fakeAddonFile = "function test() { return 5 }\nmodule.exports = test;\n";
         const fakeAddonPath = join(__dirname, "addons/fakeAddon");
         await writeFile(join(fakeAddonPath, "index.js"), fakeAddonFile);
 
@@ -211,7 +211,7 @@ test.group("Other Config file", (group) => {
             }
         };
         await writeFile("test/agent.json", JSON.stringify(configObj, null, 4));
-        
+
         const core = new Core(__dirname);
         await core.initialize();
         core.config.once("configWritten", () => {

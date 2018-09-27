@@ -1,7 +1,6 @@
 // Require Node.JS dependencies
 const { mkdir, writeFile } = require("fs").promises;
 const { join, isAbsolute } = require("path");
-const { Duplex } = require("stream");
 const os = require("os");
 
 // Require Third-party dependencies
