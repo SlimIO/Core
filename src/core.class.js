@@ -216,18 +216,13 @@ class Core {
             this.config.set("addons", addonsCfg);
         }
 
+        // Setup configuration observable
         for (const [addonName] of Object.entries(addonsCfg)) {
-            // Setup configuration observable at the next loop iteration!
             this.config.observableOf(`addons.${addonName}`).subscribe(
                 (curr) => {
-                    try {
-                        this.onAddonReconfiguration(addonName, curr);
-                    }
-                    catch (error) {
-                        console.error(error);
-                    }
+                    this.onAddonReconfiguration(addonName, curr).catch(this.generateDump);
                 },
-                console.error
+                this.generateDump
             );
         }
 
