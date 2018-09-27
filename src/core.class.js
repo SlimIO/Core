@@ -121,6 +121,9 @@ class Core {
              * @returns {void}
              */
             messageHandler = async(messageId, target, args) => {
+                if (!this.routingTable.has(target)) {
+                    return;
+                }
                 const responseBody = await this.routingTable.get(target)(args);
                 addon.cp.send({ messageId, body: responseBody });
             };
@@ -136,6 +139,9 @@ class Core {
              * @returns {void}
              */
             messageHandler = async(messageId, target, args) => {
+                if (!this.routingTable.has(target)) {
+                    return;
+                }
                 const responseBody = await this.routingTable.get(target)(args);
                 if (!addon.observers.has(messageId)) {
                     return;
