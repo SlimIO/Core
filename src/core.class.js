@@ -249,7 +249,9 @@ class Core {
             message: error.message || "",
             stack: error.stack ? error.stack.split("\n") : ""
         }, null, 4);
-        writeFile(dumpFile, dumpStr).catch(console.error);
+        setImmediate(() => {
+            writeFile(dumpFile, dumpStr).catch(console.error);
+        });
 
         return dumpFile;
     }
