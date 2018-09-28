@@ -1,6 +1,3 @@
 {
-    "extends": "@slimio/eslint-config",
-    "parserOptions": {
-        "ecmaVersion": 9
-    }
+    "extends": "@slimio/eslint-config"
 }
