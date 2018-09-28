@@ -83,102 +83,6 @@ class Core {
     }
 
     /**
-     * @async
-     * @private
-     * @method loadAddon
-     * @param {!Addon | ParallelAddon} addon addon
-     * @returns {Promise<Addon>}
-     *
-     * @this Core
-     */
-    async loadAddon(addon) {
-        /** @type {{name: string, callbacks: string[]}} */
-        const { name, callbacks } = await addon.executeCallback("get_info");
-
-        let messageHandler = null;
-        if (addon instanceof ParallelAddon) {
-            /**
-             * @async
-             * @func messageHandler
-             * @desc Handle addon message!
-             * @param {!String} messageId messageId
-             * @param {!String} target target
-             * @param {any[]} args Callback arguments
-             * @returns {void}
-             */
-            messageHandler = async(messageId, target, args) => {
-                if (!this.routingTable.has(target)) {
-                    return;
-                }
-                const responseBody = await this.routingTable.get(target)(args);
-                addon.cp.send({ messageId, body: responseBody });
-            };
-        }
-        else {
-            /**
-             * @async
-             * @func messageHandler
-             * @desc Handle addon message!
-             * @param {!String} messageId messageId
-             * @param {!String} target target
-             * @param {any[]} args Callback arguments
-             * @returns {void}
-             */
-            messageHandler = async(messageId, target, args) => {
-                if (!this.routingTable.has(target)) {
-                    return;
-                }
-                const responseBody = await this.routingTable.get(target)(args);
-                if (!addon.observers.has(messageId)) {
-                    return;
-                }
-
-                const observer = addon.observers.get(messageId);
-                if (responseBody.constructor.name === "Stream") {
-                    for await (const buf of responseBody) {
-                        observer.next(buf.toString());
-                    }
-                }
-                else {
-                    observer.next(responseBody);
-                }
-                observer.complete();
-            };
-        }
-
-        // Setup ready listener
-        addon.prependListener("ready", () => {
-            for (const [addonName, addon] of this._addons.entries()) {
-                if (addonName === name) {
-                    continue;
-                }
-                addon.emit("addonLoaded", name);
-            }
-        });
-
-        // Setup start listener
-        addon.prependListener("start", () => {
-            for (const callback of callbacks) {
-                console.log(`[CORE] Setup routing table: ${name}.${callback}`);
-                this.routingTable.set(`${name}.${callback}`, (args) => {
-                    return addon.executeCallback(callback, args);
-                });
-            }
-            addon.prependListener("message", messageHandler);
-        });
-
-        // Setup stop listener
-        addon.prependListener("stop", () => {
-            addon.removeAllListeners("message");
-            for (const callback of callbacks) {
-                this.routingTable.delete(`${name}.${callback}`);
-            }
-        });
-
-        return addon;
-    }
-
-    /**
      * @public
      * @async
      * @method initialize
@@ -311,6 +215,102 @@ class Core {
         }
 
         return void 0;
+    }
+
+    /**
+     * @async
+     * @private
+     * @method loadAddon
+     * @param {!Addon | ParallelAddon} addon addon
+     * @returns {Promise<Addon>}
+     *
+     * @this Core
+     */
+    async loadAddon(addon) {
+        /** @type {{name: string, callbacks: string[]}} */
+        const { name, callbacks } = await addon.executeCallback("get_info");
+
+        let messageHandler = null;
+        if (addon instanceof ParallelAddon) {
+            /**
+             * @async
+             * @func messageHandler
+             * @desc Handle addon message!
+             * @param {!String} messageId messageId
+             * @param {!String} target target
+             * @param {any[]} args Callback arguments
+             * @returns {void}
+             */
+            messageHandler = async(messageId, target, args) => {
+                if (!this.routingTable.has(target)) {
+                    return;
+                }
+                const responseBody = await this.routingTable.get(target)(args);
+                addon.cp.send({ messageId, body: responseBody });
+            };
+        }
+        else {
+            /**
+             * @async
+             * @func messageHandler
+             * @desc Handle addon message!
+             * @param {!String} messageId messageId
+             * @param {!String} target target
+             * @param {any[]} args Callback arguments
+             * @returns {void}
+             */
+            messageHandler = async(messageId, target, args) => {
+                if (!this.routingTable.has(target)) {
+                    return;
+                }
+                const responseBody = await this.routingTable.get(target)(args);
+                if (!addon.observers.has(messageId)) {
+                    return;
+                }
+
+                const observer = addon.observers.get(messageId);
+                if (responseBody.constructor.name === "Stream") {
+                    for await (const buf of responseBody) {
+                        observer.next(buf.toString());
+                    }
+                }
+                else {
+                    observer.next(responseBody);
+                }
+                observer.complete();
+            };
+        }
+
+        // Setup ready listener
+        addon.prependListener("ready", () => {
+            for (const [addonName, addon] of this._addons.entries()) {
+                if (addonName === name) {
+                    continue;
+                }
+                addon.emit("addonLoaded", name);
+            }
+        });
+
+        // Setup start listener
+        addon.prependListener("start", () => {
+            for (const callback of callbacks) {
+                console.log(`[CORE] Setup routing table: ${name}.${callback}`);
+                this.routingTable.set(`${name}.${callback}`, (args) => {
+                    return addon.executeCallback(callback, args);
+                });
+            }
+            addon.prependListener("message", messageHandler);
+        });
+
+        // Setup stop listener
+        addon.prependListener("stop", () => {
+            addon.removeAllListeners("message");
+            for (const callback of callbacks) {
+                this.routingTable.delete(`${name}.${callback}`);
+            }
+        });
+
+        return addon;
     }
 
     /**
