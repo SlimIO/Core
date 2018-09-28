@@ -21,12 +21,6 @@ const is = require("@sindresorhus/is");
 const Core = require("../index");
 const { searchForAddons } = require("../src/utils.js");
 
-function sleep(ms) {
-    return new Promise((resolve) => {
-        setTimeout(resolve, ms);
-    });
-}
-
 test.group("Default test", (group) => {
     group.after(async() => {
         console.log("REMOVE FILE AGENT GROUP");
@@ -175,6 +169,7 @@ test.group("Other Config file", (group) => {
 
         await unlink(join(fakeAddonPath, "index.js"));
         const debugDir = join(__dirname, "debug");
+        await new Promise((resolve) => setTimeout(resolve, 50));
         let files = await readdir(debugDir);
         assert.lengthOf(files, 1, "Must be one file in debug directory");
         for (const file of files) {
@@ -259,6 +254,7 @@ test("Generate empty dump error", async(assert) => {
     await core.initialize();
 
     const dumpFile = core.generateDump({});
+    await new Promise((resolve) => setTimeout(resolve, 50));
     const dumpStr = await readFile(dumpFile, "utf-8");
     assert.isString(dumpStr, "dumpStr is string");
 
@@ -282,7 +278,7 @@ test("Generate basic dump error", async(assert) => {
         message: "test",
         stack: "test1\ntest2"
     });
-    sleep(50);
+    await new Promise((resolve) => setTimeout(resolve, 50));
     const dumpStr = await readFile(dumpFile, "utf-8");
     assert.isString(dumpStr, "dumpStr is string");
 
