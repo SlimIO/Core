@@ -162,7 +162,10 @@ class Core {
 
         // Setup ready listener
         addon.prependListener("ready", () => {
-            for (const addon of this._addons.values()) {
+            for (const [addonName, addon] of this._addons.entries()) {
+                if (addonName === name) {
+                    continue;
+                }
                 addon.emit("addonLoaded", name);
             }
         });
