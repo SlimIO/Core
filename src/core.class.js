@@ -148,7 +148,14 @@ class Core {
                 }
 
                 const observer = addon.observers.get(messageId);
-                observer.next(responseBody);
+                if (responseBody.constructor.name === "Stream") {
+                    for await (const buf of responseBody) {
+                        observer.next(buf.toString());
+                    }
+                }
+                else {
+                    observer.next(responseBody);
+                }
                 observer.complete();
             };
         }
