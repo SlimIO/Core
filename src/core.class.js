@@ -9,6 +9,7 @@ const is = require("@sindresorhus/is");
 
 // Require Internal Dependencies
 const Config = require("@slimio/config");
+const { createDirectory } = require("@slimio/utils");
 const { searchForAddons } = require("./utils");
 const ParallelAddon = require("./parallelAddon.class");
 
@@ -108,7 +109,6 @@ class Core {
         /** @type {{name: string, callbacks: string[]}} */
         const { name, callbacks } = await addon.executeCallback("get_info");
 
-        /** @type {() => void} */
         let messageHandler = null;
         if (addon instanceof ParallelAddon) {
             /**
@@ -204,15 +204,7 @@ class Core {
      */
     async initialize() {
         // Create root debug directory
-        try {
-            await mkdir(join(this.root, "debug"));
-        }
-        catch (error) {
-            if (error.code !== "EEXIST") {
-                throw error;
-            }
-            console.log("[CORE] Root /debug directory already created!");
-        }
+        createDirectory(join(this.root, "debug"));
 
         // Read the agent (core) configuration file
         await this.config.read(Core.DEFAULT_CONFIGURATION);
@@ -230,9 +222,9 @@ class Core {
         for (const [addonName] of Object.entries(addonsCfg)) {
             this.config.observableOf(`addons.${addonName}`).subscribe(
                 (curr) => {
-                    this.onAddonReconfiguration(addonName, curr).catch(this.generateDump);
+                    this.onAddonReconfiguration(addonName, curr).catch(this.generateDump.bind(this));
                 },
-                this.generateDump
+                this.generateDump.bind(this)
             );
         }
 
