@@ -1,5 +1,5 @@
 // Require Node.JS dependencies
-const { mkdir, writeFile } = require("fs").promises;
+const { writeFile } = require("fs").promises;
 const { join, isAbsolute } = require("path");
 const os = require("os");
 
@@ -54,14 +54,10 @@ class Core {
             throw new Error("Core.root->value should be an absolute system path!");
         }
 
-        Reflect.defineProperty(this, "_root", {
-            value: dirname,
-            writable: true
-        });
-
+        this.root = dirname;
         this.hasBeenInitialized = false;
 
-        /** @type {Map<String, () => any>} */
+        /** @type {Map<String, Addon.Callback>} */
         this.routingTable = new Map();
 
         /** @type {Map<String, Addon | ParallelAddon>} */
@@ -85,15 +81,6 @@ class Core {
      */
     get addons() {
         return [...this._addons.values()];
-    }
-
-    /**
-     * @public
-     * @memberof Core#
-     * @member {String} root
-     */
-    get root() {
-        return Reflect.get(this, "_root");
     }
 
     /**

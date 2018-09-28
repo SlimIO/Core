@@ -9,7 +9,6 @@ declare class Core {
 
     // Properties
     readonly addons: Addon[];
-    private _root: string;
     root: string;
     private _addons: Map<string, Addon>;
     config: Config<any>;
