@@ -113,7 +113,7 @@ test.group("Default test", (group) => {
         await core.initialize();
         await new Promise((resolve) => setImmediate(resolve));
 
-        const addons = core.addons;
+        const addons = [...core.addons.values()];
         assert.isArray(addons, "addons is array");
         assert.strictEqual(addons.length, 0, "addon.length === 0");
     });
@@ -124,7 +124,7 @@ test.group("Default test", (group) => {
         await core.initialize();
         await new Promise((resolve) => setImmediate(resolve));
 
-        for (const addon of core.addons) {
+        for (const addon of core.addons.values()) {
             assert.isObject(addon, "addon is object");
             assert.strictEqual(addon.constructor.name, "Addon", "addon.constructor.name === \"Addon\"");
         }
@@ -144,13 +144,13 @@ test.group("Default test", (group) => {
         await new Promise((resolve) => setImmediate(resolve));
 
         assert.strictEqual(core.hasBeenInitialized, true, "Core initialized state is true");
-        for (const addon of core.addons) {
+        for (const addon of core.addons.values()) {
             assert.strictEqual(addon.isStarted, true, "Addon is started equal true");
         }
 
         await core.exit();
         assert.strictEqual(core.hasBeenInitialized, false, "Core initialized state is false");
-        for (const addon of core.addons) {
+        for (const addon of core.addons.values()) {
             assert.strictEqual(addon.isStarted, false, "Addon is started equal false");
         }
     });
@@ -192,7 +192,7 @@ test.group("Other Config file", (group) => {
             core.config.once("error", reject);
             core.config.once("configWritten", resolve);
         });
-        const onDemandAddon = core._addons.get("ondemand");
+        const onDemandAddon = core.addons.get("ondemand");
         assert.strictEqual(onDemandAddon.isStarted, true, "ondemand Addon is started!");
 
         assert.isTrue(core.config.get("addons.ondemand.active"), "addons.ondemand.active === TRUE");

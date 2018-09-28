@@ -27,8 +27,7 @@ if (AVAILABLE_CPU_LEN === 1) {
  * @class Core
  * @property {Config} config Agent (core) configuration file
  * @property {Boolean} hasBeenInitialized Variable to know if the core has been initialize or not!
- * @property {Map<String, Addon>} _addons Loaded addons
- * @property {Addon[]} addons
+ * @property {Map<String, Addon>} addons Loaded addons
  * @property {String} root
  */
 class Core {
@@ -59,7 +58,7 @@ class Core {
         this.routingTable = new Map();
 
         /** @type {Map<String, Addon | ParallelAddon>} */
-        this._addons = new Map();
+        this.addons = new Map();
 
         this.root = dirname;
         this.hasBeenInitialized = false;
@@ -70,16 +69,6 @@ class Core {
             defaultSchema: Core.DEFAULT_SCHEMA,
             reloadDelay: options.autoReload ? 500 : void 0
         });
-    }
-
-    /**
-     * @public
-     * @memberof Core#
-     * @member {Addon[]} addons
-     * @return {Addon[]}
-     */
-    get addons() {
-        return [...this._addons.values()];
     }
 
     /**
@@ -164,7 +153,7 @@ class Core {
         /** @type {Addon | ParallelAddon} */
         let addon = null;
         const isStandalone = AVAILABLE_CPU_LEN > 1 ? standalone : false;
-        if (!this._addons.has(addonName)) {
+        if (!this.addons.has(addonName)) {
             if (!active) {
                 return void 0;
             }
@@ -184,7 +173,7 @@ class Core {
                     console.log(`Load (In same process as core) addon with name => ${addonName}`);
                 }
 
-                this._addons.set(addonName, addon);
+                this.addons.set(addonName, addon);
                 await this.loadAddon(addon);
             }
             catch (error) {
@@ -195,7 +184,7 @@ class Core {
             }
         }
         else {
-            addon = this._addons.get(addonName);
+            addon = this.addons.get(addonName);
         }
 
         const stateToBeTriggered = active ? "start" : "stop";
@@ -283,7 +272,7 @@ class Core {
 
         // Setup ready listener
         addon.prependListener("ready", () => {
-            for (const [addonName, addon] of this._addons.entries()) {
+            for (const [addonName, addon] of this.addons.entries()) {
                 if (addonName === name) {
                     continue;
                 }
@@ -330,7 +319,7 @@ class Core {
 
         // Wait for all addons to be stopped!
         await Promise.all(
-            this.addons.map((addon) => addon.executeCallback("stop"))
+            [...this.addons.values()].map((addon) => addon.executeCallback("stop"))
         );
 
         await this.config.close();

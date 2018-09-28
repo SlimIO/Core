@@ -8,9 +8,8 @@ declare class Core {
     constructor(dirname: string, options?: Core.ConstructorOptions);
 
     // Properties
-    readonly addons: Addon[];
     root: string;
-    private _addons: Map<string, Addon>;
+    addons: Map<string, Addon>;
     config: Config<any>;
 
     static DEFAULTConfiguration: Core.CFG;
