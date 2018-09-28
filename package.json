@@ -31,14 +31,14 @@
         "@escommunity/minami": "^1.0.0",
         "@slimio/eslint-config": "^1.1.7",
         "@types/es6-shim": "^0.31.37",
-        "@types/node": "^10.10.3",
+        "@types/node": "^10.11.2",
         "eslint": "^5.6.0",
         "japa": "^1.0.6",
         "nyc": "^13.0.1"
     },
     "dependencies": {
         "@sindresorhus/is": "^0.11.0",
-        "@slimio/addon": "^0.1.0",
+        "@slimio/addon": "^0.4.0",
         "@slimio/config": "^0.6.0",
         "make-promises-safe": "^1.1.0",
         "uuid": "^3.3.2"
