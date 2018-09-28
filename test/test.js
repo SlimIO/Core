@@ -99,10 +99,6 @@ test.group("Default test", (group) => {
 
         const core = new Core(__dirname);
         await core.initialize();
-        await new Promise((resolve, reject) => {
-            core.config.once("error", reject);
-            core.config.once("configWritten", resolve);
-        });
         await access(join(__dirname, "agent.json"), R_OK | X_OK);
 
         assert.strictEqual(is.map(core.routingTable), true, "core.routingTable is Map");
@@ -209,31 +205,30 @@ test.group("Other Config file", (group) => {
         await core.exit();
     });
 
-    // test("Addon desactivate by default in config", async(assert) => {
-    //     const configObj = {
-    //         addons: {
-    //             cpu: {
-    //                 active: false,
-    //                 standalone: false
-    //             }
-    //         }
-    //     };
-    //     await writeFile(join(__dirname, "agent.json"), JSON.stringify(configObj, null, 4));
-    //     console.log("done");
+    test("Addon desactivate by default in config", async(assert) => {
+        const configObj = {
+            addons: {
+                cpu: {
+                    active: false,
+                    standalone: false
+                }
+            }
+        };
+        await writeFile(join(__dirname, "agent.json"), JSON.stringify(configObj, null, 4));
 
-    //     const core = new Core(__dirname);
-    //     await core.initialize(Core.DEFAULT_CONFIGURATION);
-    //     console.log(core.config.payload);
+        const core = new Core(__dirname);
+        await core.initialize(Core.DEFAULT_CONFIGURATION);
+        assert.isFalse(core.config.payload.addons.cpu.active);
+        core.config.set("addons.cpu.active", true);
 
-    //     await new Promise((resolve, reject) => {
-    //         core.config.once("error", reject);
-    //         core.config.once("configWritten", resolve);
-    //     });
+        await new Promise((resolve, reject) => {
+            core.config.once("error", reject);
+            core.config.once("configWritten", resolve);
+        });
+        assert.isTrue(core.config.payload.addons.cpu.active);
 
-    //     await core.exit();
-
-    //     // assert.isFalse(core.config.payload.addons.cpu.active);
-    // });
+        await core.exit();
+    });
 });
 
 test("Utils.js searchForAddons", async(assert) => {
@@ -295,7 +290,7 @@ test("Generate basic dump error", async(assert) => {
 });
 
 // Comment this function to access debug files
-test("Clean Debug", async() => {
+test("Clean Debug directory", async() => {
     const debugDir = join(__dirname, "debug");
 
     const files = await readdir(debugDir);
