@@ -5,11 +5,11 @@ const os = require("os");
 
 // Require Third-party dependencies
 require("make-promises-safe");
-const is = require("@sindresorhus/is");
-
-// Require Internal Dependencies
 const Config = require("@slimio/config");
 const { createDirectory } = require("@slimio/utils");
+const is = require("@slimio/is");
+
+// Require Internal Dependencies
 const { searchForAddons } = require("./utils");
 const ParallelAddon = require("./parallelAddon.class");
 
@@ -40,13 +40,14 @@ class Core {
      * @param {Number=} [options.autoReload=500] autoReload configuration
      *
      * @throws {TypeError}
+     * @throws {Error}
      */
     constructor(dirname, options = Object.create(null)) {
         if (!is.string(dirname)) {
             throw new TypeError("dirname should be type <string>");
         }
 
-        if (!is.object(options)) {
+        if (!is.plainObject(options)) {
             throw new TypeError("options should be type <object>");
         }
 
@@ -54,17 +55,15 @@ class Core {
             throw new Error("Core.root->value should be an absolute system path!");
         }
 
-        this.root = dirname;
-        this.hasBeenInitialized = false;
-
         /** @type {Map<String, Addon.Callback>} */
         this.routingTable = new Map();
 
         /** @type {Map<String, Addon | ParallelAddon>} */
         this._addons = new Map();
 
-        const configPath = join(this.root, "agent.json");
-        this.config = new Config(configPath, {
+        this.root = dirname;
+        this.hasBeenInitialized = false;
+        this.config = new Config(join(this.root, "agent.json"), {
             createOnNoEntry: true,
             writeOnSet: true,
             autoReload: true,
