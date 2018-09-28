@@ -22,6 +22,7 @@ const Core = require("../index");
 const { searchForAddons } = require("../src/utils.js");
 
 test.group("Default test", (group) => {
+
     group.after(async() => {
         console.log("REMOVE FILE AGENT GROUP");
         const remove = [
@@ -45,10 +46,8 @@ test.group("Default test", (group) => {
             if (stats.isFile()) {
                 await unlink(elem);
             }
-            if (stats.isDirectory()) {
-                await rmdir(elem, (err) => {
-                    console.log(err);
-                });
+            else if (stats.isDirectory()) {
+                await rmdir(elem, console.error);
             }
         }
     });
@@ -97,49 +96,46 @@ test.group("Default test", (group) => {
 
     test("Initialization of Core", async(assert) => {
         assert.plan(4);
-        try {
-            await access(join(__dirname, "agent.json"), R_OK | X_OK);
-            await unlink(join(__dirname, "agent.json"));
-        }
-        catch (error) {
-            console.error;
-        }
+
         const core = new Core(__dirname);
         await core.initialize();
-        await new Promise((resolve) => {
-            core.config.once("configWritten", () => {
-                assert.strictEqual(is.map(core.routingTable), true, "core.routingTable is Map");
-                assert.isBoolean(core.hasBeenInitialized, "core.hasBeenInitialized is boolean");
-                assert.strictEqual(core.hasBeenInitialized, true, "core.hasBeenInitialized === true");
-                assert.isObject(core.config, "core.config is object");
-                resolve();
-            });
+        await new Promise((resolve, reject) => {
+            core.config.once("error", reject);
+            core.config.once("configWritten", resolve);
         });
+        await access(join(__dirname, "agent.json"), R_OK | X_OK);
+
+        assert.strictEqual(is.map(core.routingTable), true, "core.routingTable is Map");
+        assert.isBoolean(core.hasBeenInitialized, "core.hasBeenInitialized is boolean");
+        assert.strictEqual(core.hasBeenInitialized, true, "core.hasBeenInitialized === true");
+        assert.isObject(core.config, "core.config is object");
     });
 
     test("Create Core without addon", async(assert) => {
         assert.plan(2);
-        const core = new Core(`${__dirname}/dirWithoutAddon`);
+        const core = new Core(join(__dirname, "dirWithoutAddon"));
         await core.initialize();
+        await new Promise((resolve) => setImmediate(resolve));
+
         const addons = core.addons;
         assert.isArray(addons, "addons is array");
         assert.strictEqual(addons.length, 0, "addon.length === 0");
     });
 
-    test("Getter addons", async(assert) => {
-        assert.plan(5);
+    test("Create Core with two addons", async(assert) => {
+        assert.plan(4);
         const core = new Core(__dirname);
         await core.initialize();
-        const addons = core.addons;
-        assert.isArray(addons, "addons is array");
-        for (const addon of addons) {
+        await new Promise((resolve) => setImmediate(resolve));
+
+        for (const addon of core.addons) {
             assert.isObject(addon, "addon is object");
             assert.strictEqual(addon.constructor.name, "Addon", "addon.constructor.name === \"Addon\"");
         }
     });
 
     test("Exit core", async(assert) => {
-        assert.plan(1);
+        assert.plan(7);
         const core = new Core(__dirname);
         try {
             await core.exit();
@@ -149,7 +145,18 @@ test.group("Default test", (group) => {
         }
 
         await core.initialize();
+        await new Promise((resolve) => setImmediate(resolve));
+
+        assert.strictEqual(core.hasBeenInitialized, true, "Core initialized state is true");
+        for (const addon of core.addons) {
+            assert.strictEqual(addon.isStarted, true, "Addon is started equal true");
+        }
+
         await core.exit();
+        assert.strictEqual(core.hasBeenInitialized, false, "Core initialized state is false");
+        for (const addon of core.addons) {
+            assert.strictEqual(addon.isStarted, false, "Addon is started equal false");
+        }
     });
 });
 
@@ -159,17 +166,19 @@ test.group("Other Config file", (group) => {
         await unlink(join(__dirname, "agent.json"));
     });
 
-    test("FakeAddon", async(assert) => {
+    test("Fake Addon export should generate a Dump file", async(assert) => {
         const fakeAddonFile = "function test() { return 5 }\nmodule.exports = test;\n";
         const fakeAddonPath = join(__dirname, "addons/fakeAddon");
         await writeFile(join(fakeAddonPath, "index.js"), fakeAddonFile);
 
         const core = new Core(__dirname);
         await core.initialize();
+        await new Promise((resolve) => setImmediate(resolve));
 
         await unlink(join(fakeAddonPath, "index.js"));
         const debugDir = join(__dirname, "debug");
         await new Promise((resolve) => setTimeout(resolve, 50));
+
         let files = await readdir(debugDir);
         assert.lengthOf(files, 1, "Must be one file in debug directory");
         for (const file of files) {
@@ -177,59 +186,54 @@ test.group("Other Config file", (group) => {
         }
         files = await readdir(debugDir);
         assert.lengthOf(files, 0, "debug directory must be clear");
+        await core.exit();
     });
 
-    test("Desactivate an addon", async(assert) => {
+    test("Stop an Active Addon", async(assert) => {
         const core = new Core(__dirname);
         await core.initialize();
-        core.config.once("configWritten", async() => {
-            assert.isTrue(core.config.get("addons.ondemand.active"), "addons.ondemand.active === TRUE");
-            core.config.set("addons.ondemand.active", false);
-            // await core.config.writeOnDisk();
-            assert.isFalse(core.config.get("addons.ondemand.active"), "addons.ondemand.active === FALSE");
-            const addons = core._addons;
-            await new Promise((resolve) => {
-                addons.get("ondemand").on("stop", () => {
-                    resolve();
-                });
-            });
+        await new Promise((resolve, reject) => {
+            core.config.once("error", reject);
+            core.config.once("configWritten", resolve);
         });
+        const onDemandAddon = core._addons.get("ondemand");
+        assert.strictEqual(onDemandAddon.isStarted, true, "ondemand Addon is started!");
+
+        assert.isTrue(core.config.get("addons.ondemand.active"), "addons.ondemand.active === TRUE");
+        core.config.set("addons.ondemand.active", false);
+
+        await new Promise((resolve, reject) => {
+            setTimeout(reject, 1000);
+            onDemandAddon.on("stop", resolve);
+        });
+        await core.exit();
     });
 
-    test("Addon desactivate by default in config", async(assert) => {
-        const configObj = {
-            addons: {
-                cpu: {
-                    active: false,
-                    standalone: false
-                }
-            }
-        };
-        await writeFile("test/agent.json", JSON.stringify(configObj, null, 4));
+    // test("Addon desactivate by default in config", async(assert) => {
+    //     const configObj = {
+    //         addons: {
+    //             cpu: {
+    //                 active: false,
+    //                 standalone: false
+    //             }
+    //         }
+    //     };
+    //     await writeFile(join(__dirname, "agent.json"), JSON.stringify(configObj, null, 4));
+    //     console.log("done");
 
-        const core = new Core(__dirname);
-        await core.initialize();
-        core.config.once("configWritten", () => {
-            assert.isFalse(core.config.addons.cpu.active);
-        });
-    });
-});
+    //     const core = new Core(__dirname);
+    //     await core.initialize(Core.DEFAULT_CONFIGURATION);
+    //     console.log(core.config.payload);
 
-test("Utils.js searchForAddons", async(assert) => {
-    try {
-        await searchForAddons(5);
-    }
-    catch (error) {
-        assert.strictEqual(error.message, "utils.searchForAddons->root should be typeof <string>");
-    }
+    //     await new Promise((resolve, reject) => {
+    //         core.config.once("error", reject);
+    //         core.config.once("configWritten", resolve);
+    //     });
 
-    // test if (!stat.isDirectory()) { continue; }
-    try {
-        await searchForAddons(join(__dirname, "addonsDir"));
-    }
-    catch (error) {
-        console.log(error);
-    }
+    //     await core.exit();
+
+    //     // assert.isFalse(core.config.payload.addons.cpu.active);
+    // });
 });
 
 test("Utils.js searchForAddons", async(assert) => {
@@ -291,7 +295,7 @@ test("Generate basic dump error", async(assert) => {
 });
 
 // Comment this function to access debug files
-test("Cleen Debug", async() => {
+test("Clean Debug", async() => {
     const debugDir = join(__dirname, "debug");
 
     const files = await readdir(debugDir);
