@@ -16,8 +16,8 @@ declare class Core {
     static DEFAULTSchema: object;
 
     // Methods
-    private loadAddon(addon: Addon): Promise<Addon>;
-    private onAddonReconfiguration(addonName: string, newConfig: Core.AddonsCFG): void;
+    private setupAddonListener(addon: Addon): Promise<Addon>;
+    private setupAddonConfiguration(addonName: string, newConfig: Core.AddonsCFG): void;
     initialize(): Promise<this>;
     generateDump(error: object): string;
     exit(): Promise<void>;

@@ -27,6 +27,7 @@ if (AVAILABLE_CPU_LEN === 1) {
  * @class Core
  * @property {Config} config Agent (core) configuration file
  * @property {Boolean} hasBeenInitialized Variable to know if the core has been initialize or not!
+ * @property {Map<String, Addon.Callback>} routingTable routingTable
  * @property {Map<String, Addon>} addons Loaded addons
  * @property {String} root
  */
@@ -101,7 +102,7 @@ class Core {
         for (const [addonName] of Object.entries(addonsCfg)) {
             this.config.observableOf(`addons.${addonName}`).subscribe(
                 (curr) => {
-                    this.onAddonReconfiguration(addonName, curr).catch(this.generateDump.bind(this));
+                    this.setupAddonConfiguration(addonName, curr).catch(this.generateDump.bind(this));
                 },
                 this.generateDump.bind(this)
             );
@@ -142,14 +143,14 @@ class Core {
      * @async
      * @private
      * @public
-     * @method onAddonReconfiguration
+     * @method setupAddonConfiguration
      * @desc This function is triggered when an Observed addon is updated!
      * @memberof Core#
      * @param {!String} addonName addonName
      * @param {AddonProperties} newConfig new addon Configuration
      * @returns {void} Return Async clojure
      */
-    async onAddonReconfiguration(addonName, { active, standalone }) {
+    async setupAddonConfiguration(addonName, { active, standalone }) {
         /** @type {Addon | ParallelAddon} */
         let addon = null;
         const isStandalone = AVAILABLE_CPU_LEN > 1 ? standalone : false;
@@ -174,7 +175,7 @@ class Core {
                 }
 
                 this.addons.set(addonName, addon);
-                await this.loadAddon(addon);
+                await this.setupAddonListener(addon);
             }
             catch (error) {
                 const dumpFile = this.generateDump(error);
@@ -209,13 +210,14 @@ class Core {
     /**
      * @async
      * @private
-     * @method loadAddon
+     * @method setupAddonListener
+     * @desc Setup all listeners for a given Addon!
      * @param {!Addon | ParallelAddon} addon addon
      * @returns {Promise<Addon>}
      *
      * @this Core
      */
-    async loadAddon(addon) {
+    async setupAddonListener(addon) {
         /** @type {{name: string, callbacks: string[]}} */
         const { name, callbacks } = await addon.executeCallback("get_info");
 
