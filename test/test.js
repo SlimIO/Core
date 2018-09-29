@@ -15,7 +15,7 @@ const { join } = require("path");
 
 // Require Third-party dependencies
 const test = require("japa");
-const is = require("@sindresorhus/is");
+const is = require("@slimio/is");
 
 // Require package
 const Core = require("../index");
