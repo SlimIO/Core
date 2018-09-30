@@ -167,6 +167,8 @@ class Core {
                     console.log(`Load (Parallel) addon with name => ${addonName}`);
                 }
                 else {
+                    // addon = await import(addonEntryFile);
+                    // console.log(addon);
                     addon = require(addonEntryFile);
                     if (addon.constructor.name !== "Addon") {
                         throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
@@ -236,7 +238,7 @@ class Core {
                 if (!this.routingTable.has(target)) {
                     return;
                 }
-                const responseBody = await this.routingTable.get(target)(args);
+                const responseBody = await this.routingTable.get(target)(...args);
                 addon.cp.send({ messageId, body: responseBody });
             };
         }
@@ -254,7 +256,7 @@ class Core {
                 if (!this.routingTable.has(target)) {
                     return;
                 }
-                const responseBody = await this.routingTable.get(target)(args);
+                const responseBody = await this.routingTable.get(target)(...args);
                 if (!addon.observers.has(messageId)) {
                     return;
                 }
