@@ -5,10 +5,9 @@ const Scheduler = require("@slimio/scheduler");
 // Declare Addon
 const ondemand = new Addon("ondemand");
 
+// eslint-disable-next-line
 async function interval() {
-    console.time("execTest");
     ondemand.sendMessage("cpu.test").subscribe((info) => {
-        console.timeEnd("execTest");
         console.log(info);
     });
 
@@ -17,9 +16,5 @@ async function interval() {
 ondemand
     .registerCallback(interval)
     .schedule(new Scheduler({ interval: 1 }));
-
-ondemand.once("init", () => {
-    console.log("addon ondemand initialized");
-});
 
 module.exports = ondemand;
