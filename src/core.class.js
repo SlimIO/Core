@@ -173,6 +173,12 @@ class Core {
                     if (addon.constructor.name !== "Addon") {
                         throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
                     }
+                    addon.catch((error, eventName) => {
+                        const dumpFile = this.generateDump(error);
+                        console.log(
+                            `En Error occured in ${addonName}, event ${eventName} (ERROR dumped in: ${dumpFile})`
+                        );
+                    });
                     console.log(`Load (In same process as core) addon with name => ${addonName}`);
                 }
 
