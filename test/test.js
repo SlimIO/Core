@@ -17,6 +17,7 @@ const { join } = require("path");
 // Require Third-party dependencies
 const test = require("japa");
 const is = require("@slimio/is");
+const rimraf = require("rimraf");
 
 // Require package
 const Core = require("../index");
@@ -236,21 +237,32 @@ test.group("Other Config file", (group) => {
     });
 });
 
-test("Utils.js searchForAddons", async(assert) => {
+test("Utils.js searchForAddons (root should be typeof <string>", async(assert) => {
     try {
         await searchForAddons(5);
     }
     catch (error) {
         assert.strictEqual(error.message, "utils.searchForAddons->root should be typeof <string>");
     }
+});
 
-    // test if (!stat.isDirectory()) { continue; }
-    try {
-        await searchForAddons(join(__dirname, "addonsDir"));
+test("Utils.js searchForAddons", async(assert) => {
+    const seekDir = join(__dirname, "searchForAddons");
+
+    await mkdir(seekDir);
+    {
+        const ret = await searchForAddons(seekDir);
+        assert.deepEqual({}, ret);
     }
-    catch (error) {
-        console.log(error);
-    }
+
+    const addonDir = join(seekDir, "addons");
+    await mkdir(addonDir);
+    await mkdir(join(addonDir, "badAddon"));
+    await mkdir(join(addonDir, "goodAddon"));
+    await writeFile(join(addonDir, "goodAddon", "index.js"), "");
+
+    const ret = await searchForAddons(seekDir);
+    assert.deepEqual({ goodAddon: {} }, ret);
 });
 
 test("Generate empty dump error", async(assert) => {
@@ -296,15 +308,14 @@ test("Generate basic dump error", async(assert) => {
 
 // Comment this function to access debug files
 test("Clean All directories", async() => {
-    const debugDir = join(__dirname, "debug");
-
-    const files = await readdir(debugDir);
-    await Promise.all(files.map(
-        (file) => unlink(join(debugDir, file))
-    ));
+    function errorHandler(error) {
+        if (error) {
+            console.error(error);
+        }
+    }
+    rimraf(join(__dirname, "debug"), errorHandler);
+    rimraf(join(__dirname, "searchForAddons"), errorHandler);
+    rimraf(join(__dirname, "dirWithoutAddon"), errorHandler);
     await unlink(join(__dirname, "agent.json"));
-    await Promise.all([
-        rmdir(join(__dirname, "debug")),
-        rmdir(join(__dirname, "dirWithoutAddon"))
-    ]);
+    await new Promise((resolve) => setTimeout(resolve, 10));
 });
