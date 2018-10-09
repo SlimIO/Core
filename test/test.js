@@ -33,29 +33,13 @@ test.group("Default test", (group) => {
     });
 
     group.after(async() => {
-        const remove = [
-            join(__dirname, "agent.json"),
-            join(__dirname, "debug"),
-            join(__dirname, "dirWithoutAddon", "agent.json"),
-            join(__dirname, "dirWithoutAddon", "debug")
-        ];
-
-        for (const elem of remove) {
-            try {
-                await access(elem, R_OK | X_OK);
+        await unlink(join(__dirname, "agent.json"));
+        rimraf(join(__dirname, "debug"), (error) => {
+            if (error) {
+                console.error(error);
             }
-            catch (err) {
-                continue;
-            }
-            const stats = await lstat(elem);
-
-            if (stats.isFile()) {
-                await unlink(elem);
-            }
-            else if (stats.isDirectory()) {
-                await rmdir(elem, console.error);
-            }
-        }
+        });
+        await new Promise((resolve) => setTimeout(resolve, 10));
     });
 
     test("Create Core", (assert) => {
