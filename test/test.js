@@ -1,7 +1,8 @@
 // Require Node.JS Dependencies
 const {
-    rmdir,
     promises: {
+        mkdir,
+        rmdir,
         unlink,
         writeFile,
         readFile,
@@ -23,13 +24,19 @@ const { searchForAddons } = require("../src/utils.js");
 
 test.group("Default test", (group) => {
 
+    group.before(async() => {
+        await Promise.all([
+            mkdir(join(__dirname, "debug")),
+            mkdir(join(__dirname, "dirWithoutAddon"))
+        ]);
+    });
+
     group.after(async() => {
-        console.log("REMOVE FILE AGENT GROUP");
         const remove = [
-            "test/agent.json",
-            "test/debug",
-            "test/dirWithoutAddon/agent.json",
-            "test/dirWithoutAddon/debug"
+            join(__dirname, "agent.json"),
+            join(__dirname, "debug"),
+            join(__dirname, "dirWithoutAddon", "agent.json"),
+            join(__dirname, "dirWithoutAddon", "debug")
         ];
 
         for (const elem of remove) {
@@ -37,9 +44,7 @@ test.group("Default test", (group) => {
                 await access(elem, R_OK | X_OK);
             }
             catch (err) {
-                if (err.code === "ENOENT") {
-                    continue;
-                }
+                continue;
             }
             const stats = await lstat(elem);
 
@@ -290,11 +295,16 @@ test("Generate basic dump error", async(assert) => {
 });
 
 // Comment this function to access debug files
-test("Clean Debug directory", async() => {
+test("Clean All directories", async() => {
     const debugDir = join(__dirname, "debug");
 
     const files = await readdir(debugDir);
-    for (const file of files) {
-        await unlink(join(debugDir, file));
-    }
+    await Promise.all(files.map(
+        (file) => unlink(join(debugDir, file))
+    ));
+    await unlink(join(__dirname, "agent.json"));
+    await Promise.all([
+        rmdir(join(__dirname, "debug")),
+        rmdir(join(__dirname, "dirWithoutAddon"))
+    ]);
 });
