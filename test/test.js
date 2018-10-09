@@ -1,14 +1,7 @@
 // Require Node.JS Dependencies
 const {
     promises: {
-        mkdir,
-        rmdir,
-        unlink,
-        writeFile,
-        readFile,
-        readdir,
-        access,
-        lstat
+        mkdir, unlink, writeFile, readFile, readdir, access
     },
     constants: { R_OK, X_OK }
 } = require("fs");
@@ -19,7 +12,7 @@ const test = require("japa");
 const is = require("@slimio/is");
 const rimraf = require("rimraf");
 
-// Require package
+// Require Internal Dependencies
 const Core = require("../index");
 const { searchForAddons } = require("../src/utils.js");
 
