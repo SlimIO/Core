@@ -33,9 +33,11 @@
         "@slimio/scheduler": "^0.4.0",
         "@types/es6-shim": "^0.31.37",
         "@types/node": "^10.11.6",
+        "@types/rimraf": "^2.0.2",
         "eslint": "^5.6.1",
         "japa": "^2.0.4",
-        "nyc": "^13.0.1"
+        "nyc": "^13.0.1",
+        "rimraf": "^2.6.2"
     },
     "dependencies": {
         "@slimio/addon": "^0.6.0",
