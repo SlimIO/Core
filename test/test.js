@@ -257,6 +257,7 @@ test("Utils.js searchForAddons", async(assert) => {
 
     const addonDir = join(seekDir, "addons");
     await mkdir(addonDir);
+    await writeFile(join(addonDir, "nothing.txt"), "");
     await mkdir(join(addonDir, "badAddon"));
     await mkdir(join(addonDir, "goodAddon"));
     await writeFile(join(addonDir, "goodAddon", "index.js"), "");
