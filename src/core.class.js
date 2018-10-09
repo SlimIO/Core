@@ -244,7 +244,7 @@ class Core {
                 if (!this.routingTable.has(target)) {
                     return;
                 }
-                const responseBody = await this.routingTable.get(target)(...args);
+                const responseBody = await this.routingTable.get(target)(args);
                 addon.cp.send({ messageId, body: responseBody });
             };
         }
@@ -262,7 +262,7 @@ class Core {
                 if (!this.routingTable.has(target)) {
                     return;
                 }
-                const responseBody = await this.routingTable.get(target)(...args);
+                const responseBody = await this.routingTable.get(target)(args);
                 if (!addon.observers.has(messageId)) {
                     return;
                 }
@@ -295,7 +295,7 @@ class Core {
             for (const callback of callbacks) {
                 console.log(`[CORE] Setup routing table: ${name}.${callback}`);
                 this.routingTable.set(`${name}.${callback}`, (args) => {
-                    return addon.executeCallback(callback, args);
+                    return addon.executeCallback(callback, ...args);
                 });
             }
             addon.prependListener("message", messageHandler);
