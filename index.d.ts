@@ -12,8 +12,8 @@ declare class Core {
     addons: Map<string, Addon>;
     config: Config<any>;
 
-    static DEFAULTConfiguration: Core.CFG;
-    static DEFAULTSchema: object;
+    static DEFAULT_CONFIGURATION: Core.CFG;
+    static DEFAULT_SCHEMA: object;
 
     // Methods
     private setupAddonListener(addon: Addon): Promise<Addon>;
