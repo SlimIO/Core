@@ -20,8 +20,8 @@ if (AVAILABLE_CPU_LEN === 1) {
     console.log("SlimIO Core - Only one vCPU available!");
 }
 
-/** @typedef {{ active: boolean; standalone?: boolean }} AddonProperties */
-/** @typedef {{[key: string]: AddonProperties}} AddonCFG */
+/** @typedef {{ active: boolean, standalone: boolean? }} AddonProperties */
+/** @typedef {Object.<string, AddonProperties>} AddonCFG */
 
 /**
  * @class Core

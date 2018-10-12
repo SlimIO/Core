@@ -13,7 +13,7 @@ const {
 } = require("fs");
 
 /**
- * @typedef {{[key: string] : {}}} emptyAddon
+ * @typedef {Object.<string, {}>} emptyAddon
  */
 
 /**
