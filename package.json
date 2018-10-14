@@ -4,7 +4,7 @@
     "description": "Slim.IO Core",
     "main": "index.js",
     "scripts": {
-        "test": "node test/test.js",
+        "test": "node test/japaRunner.js",
         "doc": "npx jsdoc -c ./jsdoc.json -r",
         "coverage": "npx nyc npm test",
         "report": "npx nyc report --reporter=html"

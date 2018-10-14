@@ -5,7 +5,12 @@ const { join } = require("path");
 // Require Third-party dependencies
 const test = require("japa");
 const rimraf = require("rimraf");
-const { AddonFactory, CallbackFactory } = require("@slimio/addon-factory");
+const { createDirectory } = require("@slimio/utils");
+const {
+    AddonFactory,
+    CallbackFactory,
+    Components: { Message }
+} = require("@slimio/addon-factory");
 
 // Require Internal Dependencies
 const Core = require("../index");
@@ -17,12 +22,7 @@ test.group("Communication Tests", (group) => {
 
     // Setup Group
     group.before(async() => {
-        try {
-            await mkdir(communicationDir);
-        }
-        catch (err) {
-            // Do nothing
-        }
+        await createDirectory(communicationDir);
         await writeFile(join(communicationDir, "agent.json"), JSON.stringify(Core.DEFAULT_CONFIGURATION));
     });
 
@@ -38,16 +38,26 @@ test.group("Communication Tests", (group) => {
 
     test("Communication Between two addons", async() => {
         // Create Addons Mock
-        const A1 = new AddonFactory("Addon1")
-            .addCallback(new CallbackFactory("test").return({ error: null }));
-        const A2 = new AddonFactory("Addon2");
+        {
+            const cbA1 = new CallbackFactory("callme")
+                .add(new Message("Addon2.callMe"))
+                .return({ error: null });
 
-        const addonsDir = join(communicationDir, "addons");
-        await mkdir(addonsDir);
-        await Promise.all([
-            A1.generate(addonsDir),
-            A2.generate(addonsDir)
-        ]);
+            const cbA2 = new CallbackFactory("callme")
+                .return(true);
+
+            const A1 = new AddonFactory("Addon1")
+                .addCallback(cbA1);
+            const A2 = new AddonFactory("Addon2")
+                .addCallback(cbA2);
+
+            const addonsDir = join(communicationDir, "addons");
+            await mkdir(addonsDir);
+            await Promise.all([
+                A1.generate(addonsDir),
+                A2.generate(addonsDir)
+            ]);
+        }
 
         // Create Core
         const _core = new Core(communicationDir);
@@ -60,7 +70,8 @@ test.group("Communication Tests", (group) => {
         // Initialize Core
         await _core.initialize();
 
-        // Force Call Addon2
+        const Addon = _core.addons.get("Addon1");
+        await Addon.executeCallback("callme");
 
         // Exit properly
         await _core.exit();
