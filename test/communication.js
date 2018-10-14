@@ -36,7 +36,7 @@ test.group("Communication Tests", (group) => {
         await new Promise((resolve) => setTimeout(resolve, 50));
     });
 
-    test("Communication Between two addons", async(assert) => {
+    test("Communication Between two addons", async() => {
         // Create Addons Mock
         const A1 = new AddonFactory("Addon1")
             .addCallback(new CallbackFactory("test").return({ error: null }));

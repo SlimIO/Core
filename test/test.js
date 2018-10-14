@@ -11,6 +11,7 @@ const { join } = require("path");
 const test = require("japa");
 const is = require("@slimio/is");
 const rimraf = require("rimraf");
+const { AddonFactory } = require("@slimio/addon-factory");
 
 // Require Internal Dependencies
 const Core = require("../index");
@@ -19,10 +20,15 @@ const { searchForAddons } = require("../src/utils.js");
 test.group("Default test", (group) => {
 
     group.before(async() => {
+        const addonDir = join(__dirname, "addons");
         await Promise.all([
+            mkdir(addonDir),
             mkdir(join(__dirname, "debug")),
             mkdir(join(__dirname, "dirWithoutAddon"))
         ]);
+        await mkdir(join(addonDir, "fakeAddon"));
+        await (new AddonFactory("cpu")).generate(addonDir);
+        await (new AddonFactory("ondemand")).generate(addonDir);
     });
 
     group.after(async() => {
@@ -291,6 +297,7 @@ test("Clean All directories", async() => {
             console.error(error);
         }
     }
+    rimraf(join(__dirname, "addons"), errorHandler);
     rimraf(join(__dirname, "debug"), errorHandler);
     rimraf(join(__dirname, "searchForAddons"), errorHandler);
     rimraf(join(__dirname, "dirWithoutAddon"), errorHandler);
