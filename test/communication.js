@@ -5,10 +5,10 @@ const { join } = require("path");
 // Require Third-party dependencies
 const test = require("japa");
 const rimraf = require("rimraf");
+const { AddonFactory, CallbackFactory } = require("@slimio/addon-factory");
 
 // Require Internal Dependencies
 const Core = require("../index");
-const AddonFactory = require("./addonFactory");
 
 // Group CONSTANTS
 const communicationDir = join(__dirname, "communication");
@@ -23,18 +23,7 @@ test.group("Communication Tests", (group) => {
         catch (err) {
             // Do nothing
         }
-        try {
-            const config = Object.assign(Core.DEFAULT_CONFIGURATION, {
-                addons: {
-                    Addon1: { active: true },
-                    Addon2: { active: true }
-                }
-            });
-            await writeFile(join(communicationDir, "agent.json"), JSON.stringify(config));
-        }
-        catch (err) {
-            console.error(err);
-        }
+        await writeFile(join(communicationDir, "agent.json"), JSON.stringify(Core.DEFAULT_CONFIGURATION));
     });
 
     // Cleanup Group
@@ -50,7 +39,7 @@ test.group("Communication Tests", (group) => {
     test("Communication Between two addons", async(assert) => {
         // Create Addons Mock
         const A1 = new AddonFactory("Addon1")
-            .createCallback("test", 10);
+            .addCallback(new CallbackFactory("test").return({ error: null }));
         const A2 = new AddonFactory("Addon2");
 
         const addonsDir = join(communicationDir, "addons");
@@ -71,10 +60,10 @@ test.group("Communication Tests", (group) => {
         // Initialize Core
         await _core.initialize();
 
+        // Force Call Addon2
+
         // Exit properly
         await _core.exit();
-
-        assert.strictEqual(10, 10);
     });
 
 });
