@@ -262,6 +262,7 @@ class Core {
                 if (!this.routingTable.has(target)) {
                     return;
                 }
+
                 const responseBody = await this.routingTable.get(target)(args);
                 if (!addon.observers.has(messageId)) {
                     return;

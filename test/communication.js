@@ -40,11 +40,11 @@ test.group("Communication Tests", (group) => {
         // Create Addons Mock
         {
             const cbA1 = new CallbackFactory("callme")
-                .add(new Message("Addon2.callMe"))
-                .return({ error: null });
+                .add(new Message("Addon2.callme"))
+                .return(null);
 
             const cbA2 = new CallbackFactory("callme")
-                .return(true);
+                .return(null);
 
             const A1 = new AddonFactory("Addon1")
                 .addCallback(cbA1);
@@ -69,9 +69,16 @@ test.group("Communication Tests", (group) => {
 
         // Initialize Core
         await _core.initialize();
+        await new Promise((resolve) => setTimeout(resolve, 10));
 
-        const Addon = _core.addons.get("Addon1");
-        await Addon.executeCallback("callme");
+        const Addon1 = _core.addons.get("Addon1");
+        const Addon2 = _core.addons.get("Addon2");
+
+        Addon2.prependListener("message", () => {
+            console.log("Receiving message!");
+        });
+        await Addon1.executeCallback("callme");
+        await new Promise((resolve) => setTimeout(resolve, 50));
 
         // Exit properly
         await _core.exit();
