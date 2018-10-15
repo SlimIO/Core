@@ -36,7 +36,8 @@ test.group("Communication Tests", (group) => {
         await new Promise((resolve) => setTimeout(resolve, 50));
     });
 
-    test("Communication Between two addons", async() => {
+    test("Communication Between two addons", async(assert) => {
+        assert.plan(1);
         // Create Addons Mock
         {
             const cbA1 = new CallbackFactory("callme")
@@ -69,16 +70,16 @@ test.group("Communication Tests", (group) => {
 
         // Initialize Core
         await _core.initialize();
-        await new Promise((resolve) => setTimeout(resolve, 10));
+        await new Promise((resolve) => setTimeout(resolve, 1));
 
         const Addon1 = _core.addons.get("Addon1");
-        const Addon2 = _core.addons.get("Addon2");
 
-        Addon2.prependListener("message", () => {
-            console.log("Receiving message!");
+        Addon1.prependListener("message", (id, target) => {
+            assert.strictEqual(target, "Addon2.callme");
         });
         await Addon1.executeCallback("callme");
-        await new Promise((resolve) => setTimeout(resolve, 50));
+        await Addon1.executeCallback("unknow");
+        await new Promise((resolve) => setTimeout(resolve, 1));
 
         // Exit properly
         await _core.exit();
