@@ -64,7 +64,7 @@ test.group("Default test", (group) => {
             assert.strictEqual(error.message, "Core.root->value should be an absolute system path!");
         }
 
-        const core = new Core(__dirname);
+        const core = new Core(__dirname, { silent: true });
         assert.strictEqual(core.constructor.name, "Core", "core.constructor.name === \"Core\"");
         assert.strictEqual(is.map(core.routingTable), true, "core.routingTable is a Map");
         assert.isBoolean(core.hasBeenInitialized, "core.hasBeenInitialized is boolean");
@@ -86,7 +86,7 @@ test.group("Default test", (group) => {
     test("Initialization of Core", async(assert) => {
         assert.plan(4);
 
-        const core = new Core(__dirname);
+        const core = new Core(__dirname, { silent: true });
         await core.initialize();
         await access(join(__dirname, "agent.json"), R_OK | X_OK);
 
@@ -109,7 +109,7 @@ test.group("Default test", (group) => {
 
     test("Create Core with two addons", async(assert) => {
         assert.plan(4);
-        const core = new Core(__dirname);
+        const core = new Core(__dirname, { silent: true });
         await core.initialize();
         await new Promise((resolve) => setImmediate(resolve));
 
@@ -121,7 +121,7 @@ test.group("Default test", (group) => {
 
     test("Exit core", async(assert) => {
         assert.plan(7);
-        const core = new Core(__dirname);
+        const core = new Core(__dirname, { silent: true });
         try {
             await core.exit();
         }
@@ -156,7 +156,7 @@ test.group("Other Config file", (group) => {
         const fakeAddonPath = join(__dirname, "addons/fakeAddon");
         await writeFile(join(fakeAddonPath, "index.js"), fakeAddonFile);
 
-        const core = new Core(__dirname);
+        const core = new Core(__dirname, { silent: true });
         await core.initialize();
         await new Promise((resolve) => setImmediate(resolve));
 
@@ -175,7 +175,7 @@ test.group("Other Config file", (group) => {
     });
 
     test("Stop an Active Addon", async(assert) => {
-        const core = new Core(__dirname);
+        const core = new Core(__dirname, { silent: true });
         await core.initialize();
         await new Promise((resolve, reject) => {
             core.config.once("error", reject);
@@ -205,7 +205,7 @@ test.group("Other Config file", (group) => {
         };
         await writeFile(join(__dirname, "agent.json"), JSON.stringify(configObj, null, 4));
 
-        const core = new Core(__dirname);
+        const core = new Core(__dirname, { silent: true });
         await core.initialize(Core.DEFAULT_CONFIGURATION);
         assert.isFalse(core.config.payload.addons.cpu.active);
         core.config.set("addons.cpu.active", true);
@@ -250,7 +250,7 @@ test("Utils.js searchForAddons", async(assert) => {
 });
 
 test("Generate empty dump error", async(assert) => {
-    const core = new Core(__dirname);
+    const core = new Core(__dirname, { silent: true });
     await core.initialize();
 
     const dumpFile = core.generateDump({});
@@ -270,7 +270,7 @@ test("Generate empty dump error", async(assert) => {
 });
 
 test("Generate basic dump error", async(assert) => {
-    const core = new Core(__dirname);
+    const core = new Core(__dirname, { silent: true });
     await core.initialize();
 
     const dumpFile = core.generateDump({

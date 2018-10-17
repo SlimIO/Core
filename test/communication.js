@@ -61,7 +61,9 @@ test.group("Communication Tests", (group) => {
         }
 
         // Create Core
-        const _core = new Core(communicationDir);
+        const _core = new Core(communicationDir, {
+            silent: true
+        });
 
         // Overwrite Core Config behavior for our test!
         _core.config.autoReload = false;

@@ -34,6 +34,7 @@ class Core {
      * @param {!String} dirname Core dirname
      * @param {Object} [options={}] options
      * @param {Number=} [options.autoReload=500] autoReload configuration
+     * @param {Boolean=} [options.silent] configure core to be silent
      *
      * @throws {TypeError}
      * @throws {Error}
@@ -58,6 +59,7 @@ class Core {
         this.addons = new Map();
 
         this.root = dirname;
+        this.silent = options.silent || false;
         this.hasBeenInitialized = false;
         this.config = new Config(join(this.root, "agent.json"), {
             createOnNoEntry: true,
@@ -66,6 +68,22 @@ class Core {
             defaultSchema: Core.DEFAULT_SCHEMA,
             reloadDelay: options.autoReload ? 500 : void 0
         });
+    }
+
+    /**
+     * @public
+     * @async
+     * @method stdout
+     * @desc stdout message
+     * @param {String=} [msg=""] message to put stdout
+     * @memberof Core#
+     * @returns {void}
+     */
+    stdout(msg = "") {
+        if (this.silent) {
+            return;
+        }
+        process.stdout.write(`[CORE] ${msg}\n`);
     }
 
     /**
@@ -161,7 +179,7 @@ class Core {
                 if (isStandalone) {
                     addon = new ParallelAddon(addonEntryFile, addonName);
                     addon.createForkProcesses();
-                    console.log(`Load (Parallel) addon with name => ${addonName}`);
+                    this.stdout(`Load (Parallel) addon with name => ${addonName}`);
                 }
                 else {
                     // addon = await import(addonEntryFile);
@@ -172,11 +190,11 @@ class Core {
                     }
                     addon.catch((error, eventName) => {
                         const dumpFile = this.generateDump(error);
-                        console.log(
+                        this.stdout(
                             `En Error occured in ${addonName}, event ${eventName} (ERROR dumped in: ${dumpFile})`
                         );
                     });
-                    console.log(`Load (In same process as core) addon with name => ${addonName}`);
+                    this.stdout(`Load (In same process as core) addon with name => ${addonName}`);
                 }
 
                 this.addons.set(addonName, addon);
@@ -184,7 +202,7 @@ class Core {
             }
             catch (error) {
                 const dumpFile = this.generateDump(error);
-                console.log(`An error occured while loading addon ${addonName} (ERROR dumped in: ${dumpFile})`);
+                this.stdout(`An error occured while loading addon ${addonName} (ERROR dumped in: ${dumpFile})`);
 
                 return void 0;
             }
@@ -205,7 +223,7 @@ class Core {
         }
         catch (error) {
             const dumpFile = this.generateDump(error);
-            console.log(
+            this.stdout(
                 `An error occured while exec ${stateToBeTriggered} on addon ${addonName} (ERROR dumped in: ${dumpFile})`
             );
         }
@@ -292,7 +310,7 @@ class Core {
         // Setup start listener
         addon.prependListener("start", () => {
             for (const callback of callbacks) {
-                console.log(`[CORE] Setup routing table: ${name}.${callback}`);
+                this.stdout(`Setup routing table: ${name}.${callback}`);
                 this.routingTable.set(`${name}.${callback}`, (args) => {
                     return addon.executeCallback(callback, ...args);
                 });
