@@ -1,18 +1,6 @@
 {
     "additionalProperties": false,
     "properties": {
-        "hostname": {
-            "type": "string",
-            "description": "Agent hostname"
-        },
-        "platform": {
-            "type": "string",
-            "description": "Agent plateform"
-        },
-        "release": {
-            "type": "string",
-            "description": "Agent release"
-        },
         "addons": {
             "type": "object",
             "patternProperties": {
@@ -22,18 +10,16 @@
                     "properties": {
                         "active": {
                             "type": "boolean",
+                            "description": "Enable/Disable Addon",
                             "default": true
                         },
                         "standalone": {
                             "type": "boolean",
-                            "default": false
-                        },
-                        "isolate": {
-                            "type": "boolean",
+                            "description": "Fork Addon on a new NodeJS processes",
                             "default": false
                         }
                     },
-                    "additionalProperties": true
+                    "additionalProperties": false
                 }
             }
         }

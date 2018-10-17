@@ -342,9 +342,6 @@ class Core {
 
 // Default Core Configuration
 Core.DEFAULT_CONFIGURATION = {
-    hostname: os.hostname(),
-    platform: os.platform(),
-    release: os.release(),
     addons: {}
 };
 
