@@ -6,15 +6,12 @@ if (typeof addonPath !== "string") {
     throw new TypeError("fork.wrapper --addonPath should be typeof <string>");
 }
 
-// Require Internal Dependencies
-const Addon = require("@slimio/addon");
-
 /**
  * @type {Addon}
  * @todo Replace require by lazy import when possible!
  */
 const addon = require(addonPath);
-if (!(addon instanceof Addon)) {
+if (addon.constructor.name !== "Addon") {
     throw new TypeError("fork.wrapper addon entry file should be a SlimIO Addon");
 }
 
