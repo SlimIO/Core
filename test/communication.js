@@ -78,7 +78,6 @@ test.group("Communication Tests", (group) => {
             assert.strictEqual(target, "Addon2.callme");
         });
         await Addon1.executeCallback("callme");
-        await Addon1.executeCallback("unknow");
         await new Promise((resolve) => setTimeout(resolve, 1));
 
         // Exit properly
