@@ -150,6 +150,7 @@ class Core {
         /** @type {Addon | ParallelAddon} */
         let addon = null;
         const isStandalone = AVAILABLE_CPU_LEN > 1 ? standalone : false;
+
         if (!this.addons.has(addonName)) {
             if (!active) {
                 return void 0;
@@ -197,9 +198,10 @@ class Core {
             if (addon instanceof ParallelAddon && active && isStandalone) {
                 addon.createForkProcesses();
             }
-            setImmediate(() => {
-                addon.executeCallback(stateToBeTriggered);
-            });
+            await addon.executeCallback(stateToBeTriggered);
+            if (!active) {
+                this.addons.delete(addonName);
+            }
         }
         catch (error) {
             const dumpFile = this.generateDump(error);
