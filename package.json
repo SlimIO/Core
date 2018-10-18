@@ -5,9 +5,9 @@
     "main": "index.js",
     "scripts": {
         "test": "node test/japaRunner.js",
-        "doc": "npx jsdoc -c ./jsdoc.json -r",
-        "coverage": "npx nyc npm test",
-        "report": "npx nyc report --reporter=html"
+        "doc": "jsdoc -c ./jsdoc.json -r",
+        "coverage": "nyc npm test",
+        "report": "nyc report --reporter=html"
     },
     "repository": {
         "type": "git",
