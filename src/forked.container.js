@@ -25,6 +25,7 @@ process.on("SIGINT", (signal) => {
  * @property {!String} messageId
  * @property {!String} callback
  * @property {any=} body
+ * @property {String=} error
  * @property {any[]} args
  */
 
@@ -54,7 +55,7 @@ async function main() {
      * @param {ProcessesMessage} payload message payload
      * @returns {Promise<void>}
      */
-    async function message({ messageId, callback, body, args = [] }) {
+    async function message({ messageId, callback, body, error, args = [] }) {
         if (typeof body !== "undefined") {
             const observer = addon.observers.get(messageId);
             observer.next(body);
@@ -62,13 +63,18 @@ async function main() {
 
             return void 0;
         }
+        if (error !== null) {
+            addon.observers.get(messageId).error(new Error(error));
+
+            return void 0;
+        }
 
         try {
             const body = await addon.executeCallback(callback, ...args);
-            process.send({ messageId, body });
+            process.send({ messageId, body, error: null });
         }
         catch (error) {
-            process.send({ messageId, body: error.message });
+            process.send({ messageId, body: null, error: error.message });
         }
 
         return void 0;
@@ -78,21 +84,21 @@ async function main() {
     // Setup ready listener
     addon.on("ready", () => {
         console.log(`Addon ${name} ready!`);
-        process.send({ target: "ready" });
+        process.send({ target: "ready", error: null });
     });
 
     // Setup start listener
     addon.on("start", () => {
         console.log(`Addon ${name} started!`);
         addon.on("message", sendMessage);
-        process.send({ target: "start" });
+        process.send({ target: "start", error: null });
     });
 
     // Setup stop listener
     addon.on("stop", () => {
         console.log(`Addon ${name} stopped!`);
         addon.removeAllListeners("message", message);
-        process.send({ target: "stop" });
+        process.send({ target: "stop", error: null });
         setImmediate(process.exit);
     });
 }

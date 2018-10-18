@@ -260,8 +260,18 @@ class Core {
                 if (!this.routingTable.has(target)) {
                     return;
                 }
-                const responseBody = await this.routingTable.get(target)(args);
-                addon.cp.send({ messageId, body: responseBody });
+
+                try {
+                    const body = await this.routingTable.get(target)(args);
+                    if (!is.nullOrUndefined(body.error)) {
+                        throw new Error(body.error);
+                    }
+
+                    addon.cp.send({ messageId, body, error: null });
+                }
+                catch (error) {
+                    addon.cp.send({ messageId, body: null, error: error.message });
+                }
             };
         }
         else {
@@ -279,21 +289,35 @@ class Core {
                     return;
                 }
 
-                const responseBody = await this.routingTable.get(target)(args);
-                if (!addon.observers.has(messageId)) {
-                    return;
-                }
-
-                const observer = addon.observers.get(messageId);
-                if (responseBody.constructor.name === "Stream") {
-                    for await (const buf of responseBody) {
-                        observer.next(buf.toString());
+                try {
+                    const responseBody = await this.routingTable.get(target)(args);
+                    if (!is.nullOrUndefined(responseBody.error)) {
+                        throw new Error(responseBody.error);
                     }
+
+                    if (!addon.observers.has(messageId)) {
+                        return;
+                    }
+
+                    const observer = addon.observers.get(messageId);
+                    if (responseBody.constructor.name === "Stream") {
+                        for await (const buf of responseBody) {
+                            observer.next(buf.toString());
+                        }
+                    }
+                    else {
+                        observer.next(responseBody);
+                    }
+                    observer.complete();
                 }
-                else {
-                    observer.next(responseBody);
+                catch (error) {
+                    if (!addon.observers.has(messageId)) {
+                        return;
+                    }
+
+                    const observer = addon.observers.get(messageId);
+                    observer.error(error);
                 }
-                observer.complete();
             };
         }
 
