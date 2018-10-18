@@ -344,7 +344,7 @@ class Core {
 
         // Setup stop listener
         addon.prependListener("stop", () => {
-            addon.removeAllListeners("message");
+            addon.removeEventListener("message", messageHandler);
             for (const callback of callbacks) {
                 this.routingTable.delete(`${name}.${callback}`);
             }
