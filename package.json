@@ -21,7 +21,7 @@
     "homepage": "https://github.com/SlimIO/Core#readme",
     "nyc": {
         "check-coverage": true,
-        "per-file": true,
+        "per-file": false,
         "lines": 98,
         "statements": 98,
         "functions": 98,
