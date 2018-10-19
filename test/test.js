@@ -40,35 +40,36 @@ test.group("Default core properties, methods and behavior", (group) => {
         await new Promise((resolve) => setTimeout(resolve, 10));
     });
 
-    test("Create Core", (assert) => {
-        assert.plan(8);
+    test("Core dirname should be typeof string!", (assert) => {
         try {
             new Core(5);
         }
         catch (error) {
-            assert.strictEqual(error.message, "dirname should be type <string>");
+            assert.strictEqual(error.message, "dirname should be typeof string!");
         }
+    });
 
+    test("Core options should be a plain object!", (assert) => {
         try {
-            new Core(__dirname, 5);
+            new Core(__dirname, []);
         }
         catch (error) {
-            assert.strictEqual(error.message, "options should be type <object>");
+            assert.strictEqual(error.message, "options should be a plain object!");
         }
+    });
 
-        try {
-            new Core("a string");
-        }
-        catch (error) {
-            assert.strictEqual(error.message, "Core.root->value should be an absolute system path!");
-        }
-
+    test("Create Core and tests default properties types and values", (assert) => {
         const core = new Core(__dirname, { silent: true });
-        assert.strictEqual(core.constructor.name, "Core", "core.constructor.name === \"Core\"");
+
         assert.strictEqual(is.map(core.routingTable), true, "core.routingTable is a Map");
+        assert.strictEqual(is.map(core.addons), true, "core.addons is a Map");
         assert.isBoolean(core.hasBeenInitialized, "core.hasBeenInitialized is boolean");
-        assert.isObject(core.config, "core.config is object");
+        assert.isBoolean(core.silent, "core.hasBeenInitialized is boolean");
+        assert.strictEqual(core.silent, true, "core.silent should be equal to true");
         assert.strictEqual(core.hasBeenInitialized, false, "core.hasBeenInitialized === false");
+        assert.strictEqual(core.config.constructor.name, "Config", "core.config constructor name is equal to Config");
+        assert.isString(core.root, "core.root should be a string");
+        assert.strictEqual(core.root, __dirname, "core.root should be equal to __dirname");
     });
 
     test("Create Core with autoReload", (assert) => {
@@ -150,6 +151,18 @@ test.group("Addons Loading", (group) => {
         await unlink(join(__dirname, "agent.json"));
     });
 
+    group.after(async() => {
+        function errorHandler(error) {
+            if (error) {
+                console.error(error);
+            }
+        }
+        rimraf(join(__dirname, "addons"), errorHandler);
+        rimraf(join(__dirname, "debug"), errorHandler);
+        rimraf(join(__dirname, "dirWithoutAddon"), errorHandler);
+        await new Promise((resolve) => setTimeout(resolve, 10));
+    });
+
     test("Fake Addon export should generate a Dump file", async(assert) => {
         const fakeAddonFile = "function test() { return 5 }\nmodule.exports = test;\n";
         const fakeAddonPath = join(__dirname, "addons/fakeAddon");
@@ -193,7 +206,7 @@ test.group("Addons Loading", (group) => {
         await core.exit();
     });
 
-    test("Addon desactivate by default in config", async(assert) => {
+    test("Addon desactivate by default in the configuration", async(assert) => {
         const configObj = {
             addons: {
                 cpu: {
@@ -217,17 +230,4 @@ test.group("Addons Loading", (group) => {
 
         await core.exit();
     });
-});
-
-// Comment this function to access debug files
-test("Clean All directories", async() => {
-    function errorHandler(error) {
-        if (error) {
-            console.error(error);
-        }
-    }
-    rimraf(join(__dirname, "addons"), errorHandler);
-    rimraf(join(__dirname, "debug"), errorHandler);
-    rimraf(join(__dirname, "dirWithoutAddon"), errorHandler);
-    await new Promise((resolve) => setTimeout(resolve, 10));
 });
