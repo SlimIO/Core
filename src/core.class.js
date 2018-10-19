@@ -1,5 +1,5 @@
 // Require Node.JS dependencies
-const { join, isAbsolute } = require("path");
+const { join } = require("path");
 const os = require("os");
 
 // Require Third-party dependencies
@@ -40,15 +40,11 @@ class Core {
      */
     constructor(dirname, options = Object.create(null)) {
         if (!is.string(dirname)) {
-            throw new TypeError("dirname should be type <string>");
+            throw new TypeError("dirname should be typeof string!");
         }
 
         if (!is.plainObject(options)) {
-            throw new TypeError("options should be type <object>");
-        }
-
-        if (!isAbsolute(dirname)) {
-            throw new Error("Core.root->value should be an absolute system path!");
+            throw new TypeError("options should be a plain object!");
         }
 
         /** @type {Map<String, Addon.Callback>} */
