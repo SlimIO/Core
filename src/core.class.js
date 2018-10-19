@@ -56,12 +56,14 @@ class Core {
         this.root = dirname;
         this.silent = options.silent || false;
         this.hasBeenInitialized = false;
+
+        const autoReload = typeof options.autoReload === "boolean" ? options.autoReload : false;
         this.config = new Config(join(this.root, "agent.json"), {
             createOnNoEntry: true,
             writeOnSet: true,
-            autoReload: true,
+            autoReload,
             defaultSchema: Core.DEFAULT_SCHEMA,
-            reloadDelay: options.autoReload ? 500 : void 0
+            reloadDelay: autoReload ? 500 : void 0
         });
     }
 
