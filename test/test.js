@@ -63,6 +63,7 @@ test.group("Default core properties, methods and behavior", (group) => {
 
         assert.strictEqual(is.map(core.routingTable), true, "core.routingTable is a Map");
         assert.strictEqual(is.map(core.addons), true, "core.addons is a Map");
+        assert.strictEqual(core.addons.size, 0, "core.addons size is equal to 0");
         assert.isBoolean(core.hasBeenInitialized, "core.hasBeenInitialized is boolean");
         assert.isBoolean(core.silent, "core.hasBeenInitialized is boolean");
         assert.strictEqual(core.silent, true, "core.silent should be equal to true");
@@ -72,32 +73,34 @@ test.group("Default core properties, methods and behavior", (group) => {
         assert.strictEqual(core.root, __dirname, "core.root should be equal to __dirname");
     });
 
-    test("Create Core with autoReload", (assert) => {
-        assert.plan(6);
-        const core = new Core(__dirname, { autoReload: true });
-        assert.strictEqual(core.constructor.name, "Core", "core.constructor.name === \"Core\"");
-        assert.strictEqual(is.map(core.routingTable), true, "core.routingTable is a Map");
-        assert.isBoolean(core.hasBeenInitialized, "core.hasBeenInitialized is boolean");
-        assert.isObject(core.config, "core.config is object");
-        assert.strictEqual(core.hasBeenInitialized, false, "core.hasBeenInitialized === false");
-        assert.strictEqual(core.config.reloadDelay, 500, "core.config.reloadDelay === 500");
+    test("Create Core with autoReload and test inner Config", (assert) => {
+        const coreA = new Core(__dirname, { autoReload: true });
+        assert.strictEqual(coreA.config.autoReload, true, "core.config.autoReload should be true!");
+        assert.strictEqual(coreA.config.reloadDelay, 500, "core.config.reloadDelay === 500");
+
+        const coreB = new Core(__dirname, { autoReload: false });
+        assert.strictEqual(coreB.config.autoReload, false, "core.config.autoReload should be false!");
     });
 
     test("Initialization of Core", async(assert) => {
-        assert.plan(4);
-
         const core = new Core(__dirname, { silent: true });
+        try {
+            await access(join(__dirname, "agent.json"), R_OK | X_OK);
+        }
+        catch (error) {
+            assert.strictEqual(error.code, "ENOENT", "No entry for agent.json");
+        }
+
+        assert.strictEqual(core.hasBeenInitialized, false, "core.hasBeenInitialized === false");
         await core.initialize();
         await access(join(__dirname, "agent.json"), R_OK | X_OK);
-
-        assert.strictEqual(is.map(core.routingTable), true, "core.routingTable is Map");
-        assert.isBoolean(core.hasBeenInitialized, "core.hasBeenInitialized is boolean");
         assert.strictEqual(core.hasBeenInitialized, true, "core.hasBeenInitialized === true");
-        assert.isObject(core.config, "core.config is object");
+        assert.strictEqual(core.addons.size, 2, "core.addons.size should be equal to 2");
+
+        await core.exit();
     });
 
     test("Create Core without addon", async(assert) => {
-        assert.plan(2);
         const core = new Core(join(__dirname, "dirWithoutAddon"));
         await core.initialize();
         await new Promise((resolve) => setImmediate(resolve));
@@ -108,7 +111,6 @@ test.group("Default core properties, methods and behavior", (group) => {
     });
 
     test("Create Core with two addons", async(assert) => {
-        assert.plan(4);
         const core = new Core(__dirname, { silent: true });
         await core.initialize();
         await new Promise((resolve) => setImmediate(resolve));
@@ -119,8 +121,7 @@ test.group("Default core properties, methods and behavior", (group) => {
         }
     });
 
-    test("Exit core", async(assert) => {
-        assert.plan(7);
+    test("Core cannot be exited if not initialized", async(assert) => {
         const core = new Core(__dirname, { silent: true });
         try {
             await core.exit();
@@ -128,7 +129,10 @@ test.group("Default core properties, methods and behavior", (group) => {
         catch (error) {
             assert.strictEqual(error.message, "Core.exit - Cannot close unitialized core");
         }
+    });
 
+    test("Exit core", async(assert) => {
+        const core = new Core(__dirname, { silent: true });
         await core.initialize();
         await new Promise((resolve) => setImmediate(resolve));
 
