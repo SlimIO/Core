@@ -29,10 +29,10 @@
     },
     "husky": {
         "hooks": {
-          "pre-push": "npm test",
-          "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+            "pre-push": "npm test",
+            "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
         }
-      },
+    },
     "devDependencies": {
         "@commitlint/cli": "^7.2.1",
         "@commitlint/config-conventional": "^7.1.2",
@@ -53,6 +53,7 @@
         "@slimio/addon": "^0.10.0",
         "@slimio/config": "^0.7.0",
         "@slimio/is": "^1.2.0",
+        "@slimio/safe-emitter": "^1.0.1",
         "@slimio/scheduler": "^0.5.0",
         "@slimio/utils": "^0.4.0",
         "make-promises-safe": "^1.1.0",
