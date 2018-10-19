@@ -11,6 +11,7 @@ declare class Core {
     root: string;
     addons: Map<string, Addon>;
     config: Config<any>;
+    silent: boolean;
 
     static DEFAULT_CONFIGURATION: Core.CFG;
     static DEFAULT_SCHEMA: object;
