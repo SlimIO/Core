@@ -4,11 +4,7 @@
 // Require Node.JS dependencie(s)
 const { join } = require("path");
 const {
-    promises: {
-        readdir,
-        lstat,
-        access
-    },
+    promises: { readdir, lstat, access, writeFile },
     constants: { R_OK, X_OK }
 } = require("fs");
 
@@ -62,6 +58,34 @@ async function searchForAddons(root) {
     return ret;
 }
 
+/**
+ * @public
+ * @function generateDump
+ * @exports utils/generateDump
+ * @desc Dump an error!
+ * @memberof utils
+ * @param {String=} root root directory
+ * @param {!Error} error Error Object (or NodeJS error)
+ * @returns {String}
+ */
+function generateDump(root = __dirname, error) {
+    const timestamp = Date.now();
+    const dumpFile = join(root, "debug", `debug_${timestamp}.json`);
+    const dumpStr = JSON.stringify({
+        date: new Date(timestamp).toString(),
+        code: error.code || null,
+        message: error.message || "",
+        stack: error.stack ? error.stack.split("\n") : ""
+    }, null, 4);
+
+    setImmediate(() => {
+        writeFile(dumpFile, dumpStr).catch(console.error);
+    });
+
+    return dumpFile;
+}
+
 module.exports = {
-    searchForAddons
+    searchForAddons,
+    generateDump
 };

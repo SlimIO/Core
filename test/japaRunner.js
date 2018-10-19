@@ -8,6 +8,7 @@ const { configure } = require("japa");
 configure({
     files: [
         join(__dirname, "communication.js"),
+        join(__dirname, "utils.js"),
         join(__dirname, "test.js")
     ]
 });

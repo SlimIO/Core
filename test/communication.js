@@ -18,7 +18,7 @@ const Core = require("../index");
 // Group CONSTANTS
 const communicationDir = join(__dirname, "communication");
 
-test.group("Communication Tests", (group) => {
+test.group("Addons Communication", (group) => {
 
     // Setup Group
     group.before(async() => {

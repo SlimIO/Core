@@ -1,5 +1,4 @@
 // Require Node.JS dependencies
-const { writeFile } = require("fs").promises;
 const { join, isAbsolute } = require("path");
 const os = require("os");
 
@@ -10,7 +9,7 @@ const { createDirectory } = require("@slimio/utils");
 const is = require("@slimio/is");
 
 // Require Internal Dependencies
-const { searchForAddons } = require("./utils");
+const { searchForAddons, generateDump } = require("./utils");
 const ParallelAddon = require("./parallelAddon.class");
 
 // SCRIPT CONSTANTS
@@ -116,9 +115,10 @@ class Core {
         for (const [addonName] of Object.entries(addonsCfg)) {
             this.config.observableOf(`addons.${addonName}`).subscribe(
                 (curr) => {
-                    this.setupAddonConfiguration(addonName, curr).catch(this.generateDump.bind(this));
+                    this.setupAddonConfiguration(addonName, curr)
+                        .catch((error) => generateDump(this.root, error));
                 },
-                this.generateDump.bind(this)
+                (error) => generateDump(this.root, error)
             );
         }
 
@@ -127,31 +127,6 @@ class Core {
 
         return this;
     }
-
-    /**
-     * @public
-     * @method generateDump
-     * @desc Dump an error!
-     * @memberof Core#
-     * @param {any} error error that have to be dumped!
-     * @returns {String}
-     */
-    generateDump(error) {
-        const timestamp = Date.now();
-        const dumpFile = join(this.root, "debug", `debug_${timestamp}.json`);
-        const dumpStr = JSON.stringify({
-            date: new Date(timestamp).toString(),
-            code: error.code || null,
-            message: error.message || "",
-            stack: error.stack ? error.stack.split("\n") : ""
-        }, null, 4);
-        setImmediate(() => {
-            writeFile(dumpFile, dumpStr).catch(console.error);
-        });
-
-        return dumpFile;
-    }
-
 
     /**
      * @async
@@ -189,7 +164,7 @@ class Core {
                         throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
                     }
                     addon.catch((error, eventName) => {
-                        const dumpFile = this.generateDump(error);
+                        const dumpFile = generateDump(this.root, error);
                         this.stdout(
                             `En Error occured in ${addonName}, event ${eventName} (ERROR dumped in: ${dumpFile})`
                         );
@@ -201,7 +176,7 @@ class Core {
                 await this.setupAddonListener(addon);
             }
             catch (error) {
-                const dumpFile = this.generateDump(error);
+                const dumpFile = generateDump(this.root, error);
                 this.stdout(`An error occured while loading addon ${addonName} (ERROR dumped in: ${dumpFile})`);
 
                 return void 0;
@@ -222,7 +197,7 @@ class Core {
             }
         }
         catch (error) {
-            const dumpFile = this.generateDump(error);
+            const dumpFile = generateDump(this.root, error);
             this.stdout(
                 `An error occured while exec ${stateToBeTriggered} on addon ${addonName} (ERROR dumped in: ${dumpFile})`
             );
