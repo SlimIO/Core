@@ -56,22 +56,30 @@ class ParallelAddon extends SafeEmitter {
 
         this.cp = fork(FORK_CONTAINER_PATH, [this.root]);
         this.cp.on("error", console.error);
-        this.cp.on("message", ({ target = "message", body, messageId = "", args }) => {
+        this.cp.on("message", ({ target, data }) => {
             switch (target) {
-                case "start":
-                case "stop":
-                case "ready":
-                    this.emit(target);
+                case 1:
+                    this.events.emit(data.messageId, data.body, data.error);
                     break;
-                case "message":
-                    this.events.emit(messageId, body);
+                case 2:
+                    this.emit("message", data.messageId, data.target, data.args);
+                    break;
+                case 3:
+                    this.emit(data);
                     break;
                 default:
-                    this.emit("message", messageId, target, args);
+                    // Do nothing on default
             }
         });
         this.cp.on("close", (code) => {
             console.log(`Addon ${this.addonName} closed with signal code: ${code}`);
+        });
+
+        this.on("addonLoaded", (addonName) => {
+            this.cp.send({
+                target: 3,
+                data: { eventName: "addonLoaded", eventData: [addonName] }
+            });
         });
 
         return void 0;
@@ -88,12 +96,16 @@ class ParallelAddon extends SafeEmitter {
      * @throws {Error}
      */
     async executeCallback(callback, args) {
-        /** @type {String} */
         const messageId = uuidv4();
-        this.cp.send({ messageId, callback, args });
+        this.cp.send({ target: 1, data: { messageId, callback, args } });
 
         try {
-            return (await this.events.once(messageId, MESSAGE_TIMEOUT_MS))[0];
+            const [body, error = null] = await this.events.once(messageId, MESSAGE_TIMEOUT_MS);
+            if (error !== null) {
+                throw new Error(error);
+            }
+
+            return body;
         }
         catch (error) {
             throw new Error(`(ParrallelAddon) Message id ${messageId} timeout (${MESSAGE_TIMEOUT_MS}ms)`);

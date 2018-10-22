@@ -189,7 +189,9 @@ class Core {
             if (addon instanceof ParallelAddon && active && isStandalone) {
                 addon.createForkProcesses();
             }
-            await addon.executeCallback(stateToBeTriggered);
+            setImmediate(() => {
+                addon.executeCallback(stateToBeTriggered);
+            });
             if (!active) {
                 this.addons.delete(addonName);
             }
@@ -240,10 +242,20 @@ class Core {
                         throw new Error(body.error);
                     }
 
-                    addon.cp.send({ messageId, body, error: null });
+                    if (body.constructor.name === "Stream") {
+                        for await (const buf of body) {
+                            addon.cp.send({
+                                target: 2,
+                                data: { messageId, body: buf.toString(), completed: false }
+                            });
+                        }
+                    }
+                    else {
+                        addon.cp.send({ target: 2, data: { messageId, body } });
+                    }
                 }
-                catch (error) {
-                    addon.cp.send({ messageId, body: null, error: error.message });
+                catch ({ message }) {
+                    addon.cp.send({ target: 2, data: { messageId, error: message } });
                 }
             };
         }

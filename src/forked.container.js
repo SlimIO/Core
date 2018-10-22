@@ -2,9 +2,6 @@ require("make-promises-safe");
 
 // Get the forked addon !
 const [addonPath] = process.argv.slice(2);
-if (typeof addonPath !== "string") {
-    throw new TypeError("fork.wrapper --addonPath should be typeof <string>");
-}
 
 /**
  * @type {Addon}
@@ -17,64 +14,55 @@ if (addon.constructor.name !== "Addon") {
 
 // Catch SIGINT Signal
 process.on("SIGINT", (signal) => {
-    console.log(`Receiving signal : ${signal}`);
+    console.log(`[${addon.name.toUpperCase()}] Process receiving signal => ${signal}`);
 });
 
 /**
- * @typedef {Object} ProcessesMessage
- * @property {!String} messageId
- * @property {!String} callback
- * @property {any=} body
- * @property {String=} error
- * @property {any[]} args
- */
-
-/**
- * @func sendMessage
- * @param {!String} messageId messageId
- * @param {!String} target message target
- * @param {*} args args
- * @returns {void}
- */
-function sendMessage(messageId, target, args) {
-    process.send({ messageId, target, args });
-}
-
-/**
- * @async
  * @function main
- * @return {Promise<void>}
+ * @return {void}
  */
-async function main() {
-    /** @type {{name: string}} */
-    const { name } = await addon.executeCallback("get_info");
-
+function main() {
     /**
      * @async
      * @func message
-     * @param {ProcessesMessage} payload message payload
+     * @param {any} payload message payload
      * @returns {Promise<void>}
      */
-    async function message({ messageId, callback, body, error, args = [] }) {
-        if (typeof body !== "undefined") {
+    async function message(payload) {
+        if (payload.target === 1) {
+            const { messageId, callback, args = [] } = payload.data;
+            try {
+                const responseBody = await addon.executeCallback(callback, ...args);
+                process.send({ target: 1, data: { messageId, body: responseBody } });
+            }
+            catch ({ message }) {
+                process.send({ target: 1, data: { messageId, error: message } });
+            }
+        }
+        else if (payload.target === 2) {
+            const { messageId, body, error = null, completed = true } = payload.data;
+            // Return if there is no message
+            if (!addon.observers.has(messageId)) {
+                return void 0;
+            }
+
             const observer = addon.observers.get(messageId);
-            observer.next(body);
-            observer.complete();
+            if (error !== null) {
+                observer.error(new Error(error));
 
-            return void 0;
-        }
-        if (error !== null) {
-            addon.observers.get(messageId).error(new Error(error));
+                return void 0;
+            }
 
-            return void 0;
+            if (typeof body !== "undefined") {
+                observer.next(body);
+            }
+            if (completed) {
+                observer.complete();
+            }
         }
-
-        try {
-            const body = await addon.executeCallback(callback, ...args);
-            process.send({ messageId, body, error: null });
-        }
-        catch (error) {
-            process.send({ messageId, body: null, error: error.message });
+        else if (payload.target === 3) {
+            const { eventData = [] } = payload.data;
+            addon.emit(payload.data.eventName, ...eventData);
         }
 
         return void 0;
@@ -83,28 +71,27 @@ async function main() {
 
     // Setup ready listener
     addon.on("ready", () => {
-        console.log(`Addon ${name} ready!`);
-        process.send({ target: "ready", error: null });
+        console.log(`[${addon.name.toUpperCase()}] Ready event triggered!`);
+        process.send({ target: 3, data: "ready" });
     });
 
     // Setup start listener
     addon.on("start", () => {
-        console.log(`Addon ${name} started!`);
-        addon.on("message", sendMessage);
-        process.send({ target: "start", error: null });
+        console.log(`[${addon.name.toUpperCase()}] Start event received!`);
+        addon.on("message", (messageId, target, args) => {
+            process.send({ target: 2, data: { messageId, target, args } });
+        });
+        process.send({ target: 3, data: "start" });
     });
 
     // Setup stop listener
     addon.on("stop", () => {
-        console.log(`Addon ${name} stopped!`);
+        console.log(`[${addon.name.toUpperCase()}] Stop event received!`);
         addon.removeAllListeners("message", message);
-        process.send({ target: "stop", error: null });
+        process.send({ target: 3, data: "stop" });
         setImmediate(process.exit);
     });
 }
 
 // Call main handler
-main().catch(function mainErrorHandler(error) {
-    console.error(error);
-    process.exit(1);
-});
+main();
