@@ -249,6 +249,7 @@ class Core {
                                 data: { messageId, body: buf.toString(), completed: false }
                             });
                         }
+                        addon.cp.send({ target: 2, data: { messageId, completed: true } });
                     }
                     else {
                         addon.cp.send({ target: 2, data: { messageId, body } });
