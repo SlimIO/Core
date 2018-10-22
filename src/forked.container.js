@@ -12,6 +12,12 @@ if (addon.constructor.name !== "Addon") {
     throw new TypeError("fork.wrapper addon entry file should be a SlimIO Addon");
 }
 
+// Catch EventEmitter errors
+addon.catch((error) => {
+    console.log(`[${addon.name.toUpperCase()}] error occured!`);
+    console.log(error);
+});
+
 // Catch SIGINT Signal
 process.on("SIGINT", (signal) => {
     console.log(`[${addon.name.toUpperCase()}] Process receiving signal => ${signal}`);
