@@ -3,7 +3,6 @@ const { join } = require("path");
 const { fork } = require("child_process");
 
 // Require Third-party Dependencies
-const uuidv4 = require("uuid/v4");
 const SafeEmitter = require("@slimio/safe-emitter");
 
 // SCRIPT CONSTANTS
@@ -56,13 +55,13 @@ class ParallelAddon extends SafeEmitter {
 
         this.cp = fork(FORK_CONTAINER_PATH, [this.root]);
         this.cp.on("error", console.error);
-        this.cp.on("message", ({ target, data }) => {
+        this.cp.on("message", ({ target, header: { id }, data }) => {
             switch (target) {
                 case 1:
-                    this.events.emit(data.messageId, data.body, data.error);
+                    this.events.emit(id, data.body, data.error);
                     break;
                 case 2:
-                    this.emit("message", data.messageId, data.target, data.args);
+                    this.emit("message", id, data.target, data.args);
                     break;
                 case 3:
                     this.emit(data);
@@ -76,10 +75,7 @@ class ParallelAddon extends SafeEmitter {
         });
 
         this.on("addonLoaded", (addonName) => {
-            this.cp.send({
-                target: 3,
-                data: { eventName: "addonLoaded", eventData: [addonName] }
-            });
+            this.cp.send({ target: 3, header: { from: addonName }, data: "addonLoaded" });
         });
 
         return void 0;
@@ -90,17 +86,17 @@ class ParallelAddon extends SafeEmitter {
      * @method executeCallback
      * @desc Polyfill of Addon.executeCallback with forked process!
      * @param {!String} callback callback name
+     * @param {*} header callback header
      * @param {any[]} args args
      * @returns {Promise<any>}
      *
      * @throws {Error}
      */
-    async executeCallback(callback, args) {
-        const messageId = uuidv4();
-        this.cp.send({ target: 1, data: { messageId, callback, args } });
+    async executeCallback(callback, header, args) {
+        this.cp.send({ target: 1, header, data: { callback, args } });
 
         try {
-            const [body, error = null] = await this.events.once(messageId, MESSAGE_TIMEOUT_MS);
+            const [body, error = null] = await this.events.once(header.id, MESSAGE_TIMEOUT_MS);
             if (error !== null) {
                 throw new Error(error);
             }
@@ -108,7 +104,7 @@ class ParallelAddon extends SafeEmitter {
             return body;
         }
         catch (error) {
-            throw new Error(`(ParrallelAddon) Message id ${messageId} timeout (${MESSAGE_TIMEOUT_MS}ms)`);
+            throw new Error(`(ParrallelAddon) Message id ${header.id} timeout (${MESSAGE_TIMEOUT_MS}ms)`);
         }
     }
 

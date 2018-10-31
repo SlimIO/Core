@@ -36,23 +36,24 @@ function main() {
      */
     async function message(payload) {
         if (payload.target === 1) {
-            const { messageId, callback, args = [] } = payload.data;
+            const header = payload.header;
+            const { callback, args = [] } = payload.data;
             try {
-                const responseBody = await addon.executeCallback(callback, ...args);
-                process.send({ target: 1, data: { messageId, body: responseBody } });
+                const responseBody = await addon.executeCallback(callback, header, ...args);
+                process.send({ target: 1, header, data: { body: responseBody } });
             }
             catch ({ message }) {
-                process.send({ target: 1, data: { messageId, error: message } });
+                process.send({ target: 1, header, data: { error: message } });
             }
         }
         else if (payload.target === 2) {
-            const { messageId, body, error = null, completed = true } = payload.data;
+            const { body, error = null, completed = true } = payload.data;
             // Return if there is no message
-            if (!addon.observers.has(messageId)) {
+            if (!addon.observers.has(payload.header.id)) {
                 return void 0;
             }
 
-            const observer = addon.observers.get(messageId);
+            const observer = addon.observers.get(payload.header.id);
             if (error !== null) {
                 observer.error(new Error(error));
 
@@ -67,8 +68,7 @@ function main() {
             }
         }
         else if (payload.target === 3) {
-            const { eventData = [] } = payload.data;
-            addon.emit(payload.data.eventName, ...eventData);
+            addon.emit(payload.data, payload.header.from);
         }
 
         return void 0;
@@ -85,7 +85,8 @@ function main() {
     addon.on("start", () => {
         console.log(`[${addon.name.toUpperCase()}] Start event received!`);
         addon.on("message", (messageId, target, args) => {
-            process.send({ target: 2, data: { messageId, target, args } });
+            const header = { from: addon.name, id: messageId };
+            process.send({ target: 2, header, data: { target, args } });
         });
         process.send({ target: 3, data: "start" });
     });

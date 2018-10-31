@@ -236,8 +236,9 @@ class Core {
                     return;
                 }
 
+                const header = { from: target, id: messageId };
                 try {
-                    const body = await this.routingTable.get(target)(args);
+                    const body = await this.routingTable.get(target)(messageId, args);
                     if (!is.nullOrUndefined(body.error)) {
                         throw new Error(body.error);
                     }
@@ -245,18 +246,17 @@ class Core {
                     if (body.constructor.name === "Stream") {
                         for await (const buf of body) {
                             addon.cp.send({
-                                target: 2,
-                                data: { messageId, body: buf.toString(), completed: false }
+                                target: 2, header, data: { body: buf.toString(), completed: false }
                             });
                         }
-                        addon.cp.send({ target: 2, data: { messageId, completed: true } });
+                        addon.cp.send({ target: 2, header, data: { completed: true } });
                     }
                     else {
-                        addon.cp.send({ target: 2, data: { messageId, body } });
+                        addon.cp.send({ target: 2, header, data: { body } });
                     }
                 }
                 catch ({ message }) {
-                    addon.cp.send({ target: 2, data: { messageId, error: message } });
+                    addon.cp.send({ target: 2, header, data: { error: message } });
                 }
             };
         }
@@ -276,7 +276,7 @@ class Core {
                 }
 
                 try {
-                    const responseBody = await this.routingTable.get(target)(args);
+                    const responseBody = await this.routingTable.get(target)(messageId, args);
                     if (!is.nullOrUndefined(responseBody.error)) {
                         throw new Error(responseBody.error);
                     }
@@ -321,8 +321,8 @@ class Core {
         addon.prependListener("start", () => {
             for (const callback of callbacks) {
                 this.stdout(`Setup routing table: ${name}.${callback}`);
-                this.routingTable.set(`${name}.${callback}`, (args) => {
-                    return addon.executeCallback(callback, ...args);
+                this.routingTable.set(`${name}.${callback}`, (id, args) => {
+                    return addon.executeCallback(callback, { id, from: name }, ...args);
                 });
             }
             addon.prependListener("message", messageHandler);
