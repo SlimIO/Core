@@ -3,11 +3,21 @@ const { join } = require("path");
 const { fork } = require("child_process");
 
 // Require Third-party Dependencies
+const uuid = require("uuid/v4");
 const SafeEmitter = require("@slimio/safe-emitter");
 
 // SCRIPT CONSTANTS
 const FORK_CONTAINER_PATH = join(__dirname, "forked.container.js");
 const MESSAGE_TIMEOUT_MS = 250;
+
+/**
+ * @func defaultHeader
+ * @desc Generate Default ParralelAddon callback header
+ * @return {Object}
+ */
+function defaultHeader() {
+    return { from: "core", id: uuid() };
+}
 
 /**
  * @class ParallelAddon
@@ -38,7 +48,7 @@ class ParallelAddon extends SafeEmitter {
 
         this.root = root;
         this.addonName = addonName;
-        this.events = new SafeEmitter();
+        this.callbackResponse = new SafeEmitter();
     }
 
     /**
@@ -55,13 +65,13 @@ class ParallelAddon extends SafeEmitter {
 
         this.cp = fork(FORK_CONTAINER_PATH, [this.root]);
         this.cp.on("error", console.error);
-        this.cp.on("message", ({ target, header: { id }, data }) => {
+        this.cp.on("message", ({ target, header, data }) => {
             switch (target) {
                 case 1:
-                    this.events.emit(id, data.body, data.error);
+                    this.callbackResponse.emit(header.id, data.body, data.error);
                     break;
                 case 2:
-                    this.emit("message", id, data.target, data.args);
+                    this.emit("message", header.id, data.target, data.args);
                     break;
                 case 3:
                     this.emit(data);
@@ -92,11 +102,11 @@ class ParallelAddon extends SafeEmitter {
      *
      * @throws {Error}
      */
-    async executeCallback(callback, header, args) {
+    async executeCallback(callback, header = defaultHeader(), args) {
         this.cp.send({ target: 1, header, data: { callback, args } });
 
         try {
-            const [body, error = null] = await this.events.once(header.id, MESSAGE_TIMEOUT_MS);
+            const [body, error = null] = await this.callbackResponse.once(header.id, MESSAGE_TIMEOUT_MS);
             if (error !== null) {
                 throw new Error(error);
             }
