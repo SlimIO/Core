@@ -1,0 +1,12 @@
+{
+    "addons": {
+        "cpu": {
+            "active": true,
+            "standalone": true
+        },
+        "test": {
+            "active": true,
+            "standalone": true
+        }
+    }
+}

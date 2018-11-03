@@ -9,11 +9,22 @@ const { createDirectory } = require("@slimio/utils");
 const {
     AddonFactory,
     CallbackFactory,
+    ComponentFactory,
     Components: { Message }
 } = require("@slimio/addon-factory");
 
 // Require Internal Dependencies
 const Core = require("../index");
+
+// eslint-disable-next-line
+class MyStream extends ComponentFactory {
+    // eslint-disable-next-line
+    toString() {
+        return "\tconst wS = new Addon.Stream();\n" +
+            "\tsetTimeout(() => {wS.write('hello');wS.end();}, 200);\n" +
+            "\treturn wS;\n";
+    }
+}
 
 // Group CONSTANTS
 const communicationDir = join(__dirname, "communication");
@@ -37,20 +48,25 @@ test.group("Addons Communication", (group) => {
     });
 
     test("Communication Between two addons", async(assert) => {
-        assert.plan(1);
+        assert.plan(2);
         // Create Addons Mock
         {
             const cbA1 = new CallbackFactory("callme")
                 .add(new Message("Addon2.callme"))
-                .return(null);
+                .add(new Message("Addon2.stream_com"))
+                .return({ error: null });
+
+            const cbStream = new CallbackFactory("stream_com")
+                .add(new MyStream());
 
             const cbA2 = new CallbackFactory("callme")
-                .return(null);
+                .return({ error: null });
 
             const A1 = new AddonFactory("Addon1")
                 .addCallback(cbA1);
             const A2 = new AddonFactory("Addon2")
-                .addCallback(cbA2);
+                .addCallback(cbA2)
+                .addCallback(cbStream);
 
             const addonsDir = join(communicationDir, "addons");
             await mkdir(addonsDir);
@@ -77,7 +93,7 @@ test.group("Addons Communication", (group) => {
         const Addon1 = _core.addons.get("Addon1");
 
         Addon1.prependListener("message", (id, target) => {
-            assert.strictEqual(target, "Addon2.callme");
+            assert.strictEqual(true, typeof target === "string");
         });
         await Addon1.executeCallback("callme");
         await new Promise((resolve) => setTimeout(resolve, 1));
