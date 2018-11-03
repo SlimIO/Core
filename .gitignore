@@ -58,3 +58,5 @@ typings/
 .environment
 
 jsdoc
+
+test/*/*/debug/

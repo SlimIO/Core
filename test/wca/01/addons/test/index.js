@@ -2,10 +2,9 @@ const Addon = require("@slimio/addon");
 
 const test = new Addon("test", "1.0.0");
 
+// eslint-disable-next-line
 test.registerCallback(async function cb_test(header) {
-    console.log(header);
-
-    return "hello world!";
+    return { ok: 1 };
 });
 
 test.on("start", () => {
