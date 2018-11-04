@@ -8,13 +8,12 @@ function errorHandler(error) {
 
 async function main() {
     const core = new Core(directory, {
-        silent: true
+        silent: false
     });
     await core.initialize();
 
     // Handle exit signal!
     process.on("SIGINT", () => {
-        console.error("EXITING AGENT");
         core.exit().then(() => {
             setImmediate(process.exit);
         }).catch(errorHandler);

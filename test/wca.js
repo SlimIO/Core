@@ -9,6 +9,7 @@ const test = require("japa");
 // GROUP CONSTANTS
 const WCA_DIR = join(__dirname, "wca");
 const COMPLETED = Buffer.from("> TEST COMPLETED!\n");
+const PASSED = Buffer.from("> TEST PASS!\n");
 const FAILED = Buffer.from("> TEST FAILED!\n");
 
 /**
@@ -30,6 +31,9 @@ async function runCase(test, id) {
         // console.log(buf.toString());
         if (COMPLETED.equals(buf)) {
             break;
+        }
+        else if (PASSED.equals(buf)) {
+            test.ok(true, true);
         }
         else if (FAILED.equals(buf)) {
             test.fail();
@@ -98,6 +102,7 @@ test.group("WCA", (group) => {
     });
 
     test("Case 02 (Standalone false)", async(test) => {
+        test.plan(2);
         const config = {
             addons: {
                 addonA: { active: true, standalone: false },
@@ -110,6 +115,7 @@ test.group("WCA", (group) => {
     });
 
     test("Case 02 (Standalone true)", async(test) => {
+        test.plan(2);
         const config = {
             addons: {
                 addonA: { active: true, standalone: true },
@@ -122,6 +128,7 @@ test.group("WCA", (group) => {
     });
 
     test("Case 02 (Standalone mix left)", async(test) => {
+        test.plan(2);
         const config = {
             addons: {
                 addonA: { active: true, standalone: true },
@@ -134,6 +141,7 @@ test.group("WCA", (group) => {
     });
 
     test("Case 02 (Standalone mix right)", async(test) => {
+        test.plan(2);
         const config = {
             addons: {
                 addonA: { active: true, standalone: false },
