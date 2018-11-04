@@ -42,8 +42,8 @@ function main() {
                 const responseBody = await addon.executeCallback(callback, header, ...args);
                 process.send({ target: 1, header, data: { body: responseBody } });
             }
-            catch ({ message }) {
-                process.send({ target: 1, header, data: { error: message } });
+            catch (error) {
+                process.send({ target: 1, header, data: { error: error.message } });
             }
         }
         else if (payload.target === 2) {

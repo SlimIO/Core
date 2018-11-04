@@ -102,7 +102,7 @@ class ParallelAddon extends SafeEmitter {
      *
      * @throws {Error}
      */
-    async executeCallback(callback, header = defaultHeader(), args) {
+    async executeCallback(callback, header = defaultHeader(), ...args) {
         this.cp.send({ target: 1, header, data: { callback, args } });
         let body, error;
 

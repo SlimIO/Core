@@ -255,8 +255,8 @@ class Core {
                         addon.cp.send({ target: 2, header, data: { body } });
                     }
                 }
-                catch ({ message }) {
-                    addon.cp.send({ target: 2, header, data: { error: message } });
+                catch (error) {
+                    addon.cp.send({ target: 2, header, data: { error: error.message } });
                 }
             };
         }

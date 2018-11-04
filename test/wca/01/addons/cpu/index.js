@@ -37,7 +37,7 @@ cpu.on("addonLoaded", async(addonName) => {
             assert.strictEqual(ok, 1);
         }
         catch (err) {
-            console.log(err);
+            // console.log(err);
             console.log("> TEST FAILED!");
             break scope;
         }
