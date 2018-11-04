@@ -8,7 +8,7 @@ const SafeEmitter = require("@slimio/safe-emitter");
 
 // SCRIPT CONSTANTS
 const FORK_CONTAINER_PATH = join(__dirname, "forked.container.js");
-const MESSAGE_TIMEOUT_MS = 250;
+const MESSAGE_TIMEOUT_MS = 750;
 
 /**
  * @func defaultHeader

@@ -238,7 +238,7 @@ class Core {
 
                 const header = { from: target, id: messageId };
                 try {
-                    const body = await this.routingTable.get(target)(messageId, args);
+                    const body = await this.routingTable.get(target)(messageId, name, args);
                     if (!is.nullOrUndefined(body.error)) {
                         throw new Error(body.error);
                     }
@@ -276,7 +276,7 @@ class Core {
                 }
 
                 try {
-                    const responseBody = await this.routingTable.get(target)(messageId, args);
+                    const responseBody = await this.routingTable.get(target)(messageId, name, args);
                     if (!is.nullOrUndefined(responseBody.error)) {
                         throw new Error(responseBody.error);
                     }
@@ -321,8 +321,8 @@ class Core {
         addon.prependListener("start", () => {
             for (const callback of callbacks) {
                 this.stdout(`Setup routing table: ${name}.${callback}`);
-                this.routingTable.set(`${name}.${callback}`, (id, args) => {
-                    return addon.executeCallback(callback, { id, from: name }, ...args);
+                this.routingTable.set(`${name}.${callback}`, (id, from, args) => {
+                    return addon.executeCallback(callback, { id, from }, ...args);
                 });
             }
             addon.prependListener("message", messageHandler);

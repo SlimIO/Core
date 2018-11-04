@@ -2,11 +2,11 @@
     "addons": {
         "cpu": {
             "active": true,
-            "standalone": true
+            "standalone": false
         },
         "test": {
             "active": true,
-            "standalone": true
+            "standalone": false
         }
     }
 }

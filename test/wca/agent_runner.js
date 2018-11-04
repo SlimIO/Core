@@ -9,7 +9,7 @@ function errorHandler(error) {
 
 async function main() {
     const core = new Core(directory, {
-        silent: true
+        silent: false
     });
     await core.initialize();
 
