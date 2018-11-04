@@ -29,7 +29,7 @@ test.group("Utils", (group) => {
         await new Promise((resolve) => setTimeout(resolve, 10));
     });
 
-    test("Utils.js searchForAddons (root should be typeof <string>", async(assert) => {
+    test("Utils.js searchForAddons (root should be typeof <string>)", async(assert) => {
         try {
             await searchForAddons(5);
         }

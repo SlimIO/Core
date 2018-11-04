@@ -27,7 +27,7 @@ async function runCase(test, id) {
     proc.stderr.on("data", (buf) => console.error(buf.toString()));
 
     for await (const buf of proc.stdout) {
-        console.log(buf.toString());
+        // console.log(buf.toString());
         if (COMPLETED.equals(buf)) {
             break;
         }
@@ -44,6 +44,7 @@ test.group("WCA", (group) => {
 
     group.after(async() => {
         await unlink(join(WCA_DIR, "01", "agent.json"));
+        await unlink(join(WCA_DIR, "02", "agent.json"));
     });
 
     test("Case 01 (Standalone false)", async(test) => {
@@ -58,7 +59,19 @@ test.group("WCA", (group) => {
         await runCase(test, "01");
     });
 
-    test("Case 01 (Standalone mix)", async(test) => {
+    test("Case 01 (Standalone mix left)", async(test) => {
+        const config = {
+            addons: {
+                cpu: { active: true, standalone: true },
+                test: { active: true, standalone: false }
+            }
+        };
+
+        await writeFile(join(WCA_DIR, "01", "agent.json"), JSON.stringify(config));
+        await runCase(test, "01");
+    });
+
+    test("Case 01 (Standalone mix right)", async(test) => {
         const config = {
             addons: {
                 cpu: { active: true, standalone: false },
@@ -80,6 +93,54 @@ test.group("WCA", (group) => {
 
         await writeFile(join(WCA_DIR, "01", "agent.json"), JSON.stringify(config));
         await runCase(test, "01");
+    });
+
+    test("Case 02 (Standalone false)", async(test) => {
+        const config = {
+            addons: {
+                addonA: { active: true, standalone: false },
+                addonB: { active: true, standalone: false }
+            }
+        };
+
+        await writeFile(join(WCA_DIR, "02", "agent.json"), JSON.stringify(config));
+        await runCase(test, "02");
+    });
+
+    test("Case 02 (Standalone true)", async(test) => {
+        const config = {
+            addons: {
+                addonA: { active: true, standalone: true },
+                addonB: { active: true, standalone: true }
+            }
+        };
+
+        await writeFile(join(WCA_DIR, "02", "agent.json"), JSON.stringify(config));
+        await runCase(test, "02");
+    });
+
+    test("Case 02 (Standalone mix left)", async(test) => {
+        const config = {
+            addons: {
+                addonA: { active: true, standalone: true },
+                addonB: { active: true, standalone: false }
+            }
+        };
+
+        await writeFile(join(WCA_DIR, "02", "agent.json"), JSON.stringify(config));
+        await runCase(test, "02");
+    });
+
+    test("Case 02 (Standalone mix right)", async(test) => {
+        const config = {
+            addons: {
+                addonA: { active: true, standalone: false },
+                addonB: { active: true, standalone: true }
+            }
+        };
+
+        await writeFile(join(WCA_DIR, "02", "agent.json"), JSON.stringify(config));
+        await runCase(test, "02");
     });
 
 });
