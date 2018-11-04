@@ -1,7 +1,7 @@
 const Addon = require("@slimio/addon");
 const assert = require("assert");
 
-const cpu = new Addon("cpu", "1.0.0");
+const addonA = new Addon("addonA", "1.0.0");
 
 /**
  * @func sendMessage
@@ -10,30 +10,30 @@ const cpu = new Addon("cpu", "1.0.0");
  */
 function sendMessage(target) {
     return new Promise((resolve, reject) => {
-        cpu.sendMessage(target).subscribe(resolve, reject);
+        addonA.sendMessage(target).subscribe(resolve, reject);
     });
 }
 
 // eslint-disable-next-line
-cpu.registerCallback(async function cb_test(header, ok) {
-    assert.strictEqual(header.from, "test");
+addonA.registerCallback(async function cb_test(header, ok) {
+    assert.strictEqual(header.from, "addonB");
     assert.strictEqual(ok, 1);
 
     return { ok };
 });
 
-cpu.on("start", () => {
-    cpu.ready();
+addonA.on("start", () => {
+    addonA.ready();
 });
 
-cpu.on("addonLoaded", async(addonName) => {
-    if (!cpu.isReady) {
-        await cpu.once("ready", 250);
+addonA.on("addonLoaded", async(addonName) => {
+    if (!addonA.isReady) {
+        await addonA.once("ready", 250);
     }
 
-    scope: if (addonName === "test") {
+    scope: if (addonName === "addonB") {
         try {
-            const { ok } = await sendMessage("test.cb_test");
+            const { ok } = await sendMessage("addonB.cb_test");
             assert.strictEqual(ok, 1);
         }
         catch (err) {
@@ -43,7 +43,7 @@ cpu.on("addonLoaded", async(addonName) => {
         }
 
         try {
-            await sendMessage("test.cb_fail");
+            await sendMessage("addonB.cb_fail");
         }
         catch (err) {
             assert.strictEqual(err.message, "Opps!");
@@ -52,4 +52,4 @@ cpu.on("addonLoaded", async(addonName) => {
     }
 });
 
-module.exports = cpu;
+module.exports = addonA;

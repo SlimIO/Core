@@ -43,15 +43,17 @@ async function runCase(test, id) {
 test.group("WCA", (group) => {
 
     group.after(async() => {
-        await unlink(join(WCA_DIR, "01", "agent.json"));
-        await unlink(join(WCA_DIR, "02", "agent.json"));
+        await Promise.all([
+            unlink(join(WCA_DIR, "01", "agent.json")),
+            unlink(join(WCA_DIR, "02", "agent.json"))
+        ]);
     });
 
     test("Case 01 (Standalone false)", async(test) => {
         const config = {
             addons: {
-                cpu: { active: true, standalone: false },
-                test: { active: true, standalone: false }
+                addonA: { active: true, standalone: false },
+                addonB: { active: true, standalone: false }
             }
         };
 
@@ -62,8 +64,8 @@ test.group("WCA", (group) => {
     test("Case 01 (Standalone mix left)", async(test) => {
         const config = {
             addons: {
-                cpu: { active: true, standalone: true },
-                test: { active: true, standalone: false }
+                addonA: { active: true, standalone: true },
+                addonB: { active: true, standalone: false }
             }
         };
 
@@ -74,8 +76,8 @@ test.group("WCA", (group) => {
     test("Case 01 (Standalone mix right)", async(test) => {
         const config = {
             addons: {
-                cpu: { active: true, standalone: false },
-                test: { active: true, standalone: true }
+                addonA: { active: true, standalone: false },
+                addonB: { active: true, standalone: true }
             }
         };
 
@@ -86,8 +88,8 @@ test.group("WCA", (group) => {
     test("Case 01 (Standalone true)", async(test) => {
         const config = {
             addons: {
-                cpu: { active: true, standalone: true },
-                test: { active: true, standalone: true }
+                addonA: { active: true, standalone: true },
+                addonB: { active: true, standalone: true }
             }
         };
 
