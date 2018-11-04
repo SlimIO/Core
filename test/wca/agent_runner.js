@@ -1,5 +1,4 @@
 const [directory] = process.argv.slice(2);
-console.log(`Agent runner triggered with directory: ${directory}`);
 const Core = require("../..");
 
 function errorHandler(error) {
@@ -9,7 +8,7 @@ function errorHandler(error) {
 
 async function main() {
     const core = new Core(directory, {
-        silent: false
+        silent: true
     });
     await core.initialize();
 

@@ -77,13 +77,11 @@ function main() {
 
     // Setup ready listener
     addon.on("ready", () => {
-        console.log(`[${addon.name.toUpperCase()}] Ready event triggered!`);
         process.send({ target: 3, data: "ready" });
     });
 
     // Setup start listener
     addon.on("start", () => {
-        console.log(`[${addon.name.toUpperCase()}] Start event received!`);
         addon.on("message", (messageId, target, args) => {
             const header = { from: addon.name, id: messageId };
             process.send({ target: 2, header, data: { target, args } });
@@ -93,7 +91,6 @@ function main() {
 
     // Setup stop listener
     addon.on("stop", () => {
-        console.log(`[${addon.name.toUpperCase()}] Stop event received!`);
         addon.removeAllListeners("message", message);
         process.send({ target: 3, data: "stop" });
         setImmediate(process.exit);

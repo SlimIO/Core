@@ -104,18 +104,19 @@ class ParallelAddon extends SafeEmitter {
      */
     async executeCallback(callback, header = defaultHeader(), args) {
         this.cp.send({ target: 1, header, data: { callback, args } });
+        let body, error;
 
         try {
-            const [body, error = null] = await this.callbackResponse.once(header.id, MESSAGE_TIMEOUT_MS);
-            if (error !== null) {
-                throw new Error(error);
-            }
-
-            return body;
+            [body, error = null] = await this.callbackResponse.once(header.id, MESSAGE_TIMEOUT_MS);
         }
         catch (error) {
             throw new Error(`(ParrallelAddon) Message id ${header.id} timeout (${MESSAGE_TIMEOUT_MS}ms)`);
         }
+        if (error !== null) {
+            throw new Error(error);
+        }
+
+        return body;
     }
 
 }
