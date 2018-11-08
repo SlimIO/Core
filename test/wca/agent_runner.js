@@ -8,7 +8,7 @@ function errorHandler(error) {
 
 async function main() {
     const core = new Core(directory, {
-        silent: false
+        silent: true
     });
     await core.initialize();
 

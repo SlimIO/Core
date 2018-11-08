@@ -239,11 +239,13 @@ class Core {
                 const header = { from: target, id: messageId };
                 try {
                     const body = await this.routingTable.get(target)(messageId, name, args);
-                    if (!is.nullOrUndefined(body.error)) {
+
+                    const isObj = is.object(body);
+                    if (isObj && !is.nullOrUndefined(body.error)) {
                         throw new Error(body.error);
                     }
 
-                    if (body.constructor.name === "Stream") {
+                    if (isObj && body.constructor.name === "Stream") {
                         for await (const buf of body) {
                             addon.cp.send({
                                 target: 2, header, data: { body: buf.toString(), completed: false }

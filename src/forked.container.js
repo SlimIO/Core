@@ -60,9 +60,7 @@ function main() {
                 return void 0;
             }
 
-            if (typeof body !== "undefined") {
-                observer.next(body);
-            }
+            observer.next(body);
             if (completed) {
                 observer.complete();
             }

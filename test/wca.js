@@ -28,7 +28,7 @@ async function runCase(test, id) {
     proc.stderr.on("data", (buf) => console.error(buf.toString()));
 
     for await (const buf of proc.stdout) {
-        // console.log(buf.toString());
+        console.log(buf.toString());
         if (COMPLETED.equals(buf)) {
             break;
         }

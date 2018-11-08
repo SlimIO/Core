@@ -37,7 +37,17 @@ addonA.on("addonLoaded", async(addonName) => {
             assert.strictEqual(ok, 1);
         }
         catch (err) {
-            // console.log(err);
+            console.log(err);
+            console.log("> TEST FAILED!");
+            break scope;
+        }
+
+        try {
+            const ret = await sendMessage("addonB.cb_void");
+            assert.strictEqual(ret, void 0);
+        }
+        catch (err) {
+            console.log(err);
             console.log("> TEST FAILED!");
             break scope;
         }

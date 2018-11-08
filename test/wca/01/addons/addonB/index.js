@@ -15,6 +15,13 @@ addonB.registerCallback(async function cb_test(header) {
 });
 
 // eslint-disable-next-line
+addonB.registerCallback(async function cb_void(header) {
+    assert.strictEqual(header.from, "addonA");
+
+    return void 0;
+});
+
+// eslint-disable-next-line
 addonB.registerCallback(async function cb_fail(header) {
     assert.strictEqual(header.from, "addonA");
     throw new Error("Opps!");
