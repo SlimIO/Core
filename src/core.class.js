@@ -277,16 +277,17 @@ class Core {
 
                 try {
                     const responseBody = await this.routingTable.get(target)(messageId, name, args);
-                    if (!is.nullOrUndefined(responseBody.error)) {
-                        throw new Error(responseBody.error);
-                    }
-
                     if (!addon.observers.has(messageId)) {
                         return;
                     }
 
+                    const isObj = is.object(responseBody);
+                    if (isObj && !is.nullOrUndefined(responseBody.error)) {
+                        throw new Error(responseBody.error);
+                    }
+
                     const observer = addon.observers.get(messageId);
-                    if (responseBody.constructor.name === "Stream") {
+                    if (isObj && responseBody.constructor.name === "Stream") {
                         for await (const buf of responseBody) {
                             observer.next(buf.toString());
                         }
