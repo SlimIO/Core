@@ -44,17 +44,18 @@ main().catch(console.error);
 ### constructor(dirname: string, options?)
 Create a new instance of Core Object. The argument `dirname` is the root directory where the core have to load his configuration and all addons.
 
-The constructor take an optional options object which contain the property `autoReload` (the delay to hot reload the core configuration).
+The constructor take an optional options object which contain all options to configure the core Agent.
 ```ts
 interface ConstructorOptions {
+    silent?: boolean;
     autoReload?: number;
 }
 ```
 
 ### initialize(): Promise<this>
-Initialize the Core (will trigger addons load). The loading of addons is lazy, so the response will be returned before the addons have had time to fully load.
+Initialize the Core (it will load configuration and addons). The loading of addons is lazy, so the response will be returned before the addons have had time to fully load.
 
 ### exit(): Promise<void>
-Exit (stop) the Core (will stop properly all addons!).
+Stop the core and all affiliated ressources (addons, config etc..).
 
 > Note: Think to exit the process with an iteration + 1 (with setImmediate).
