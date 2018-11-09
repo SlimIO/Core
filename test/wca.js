@@ -8,9 +8,6 @@ const test = require("japa");
 
 // GROUP CONSTANTS
 const WCA_DIR = join(__dirname, "wca");
-const COMPLETED = Buffer.from("> TEST COMPLETED!\n");
-const PASSED = Buffer.from("> TEST PASS!\n");
-const FAILED = Buffer.from("> TEST FAILED!\n");
 
 /**
  * @async
@@ -28,14 +25,18 @@ async function runCase(test, id) {
     proc.stderr.on("data", (buf) => console.error(buf.toString()));
 
     for await (const buf of proc.stdout) {
-        console.log(buf.toString());
-        if (COMPLETED.equals(buf)) {
+        const str = buf.toString().trim();
+        if (str === "") {
+            continue;
+        }
+
+        if (str.includes("TEST COMPLETED!")) {
             break;
         }
-        else if (PASSED.equals(buf)) {
+        else if (str.includes("TEST PASS")) {
             test.ok(true, true);
         }
-        else if (FAILED.equals(buf)) {
+        else if (str.includes("TEST FAILED")) {
             test.fail();
             break;
         }
@@ -141,7 +142,7 @@ test.group("WCA", (group) => {
     });
 
     test("Case 02 (Standalone mix right)", async(test) => {
-        test.plan(2);
+        test.plan(3);
         const config = {
             addons: {
                 addonA: { active: true, standalone: false },
