@@ -1,6 +1,4 @@
 # Core
-Slim.IO Core.
-
 The Core has been created to load SlimIO addons and capable to achieve socket communication channel (IPC) between each addons.
 
 ## Getting Started
