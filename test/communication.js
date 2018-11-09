@@ -48,7 +48,7 @@ test.group("Addons Communication", (group) => {
     });
 
     test("Communication Between two addons", async(assert) => {
-        assert.plan(2);
+        assert.plan(1);
         // Create Addons Mock
         {
             const cbA1 = new CallbackFactory("callme")
@@ -56,17 +56,13 @@ test.group("Addons Communication", (group) => {
                 .add(new Message("Addon2.stream_com"))
                 .return({ error: null });
 
-            const cbStream = new CallbackFactory("stream_com")
-                .add(new MyStream());
-
             const cbA2 = new CallbackFactory("callme")
                 .return({ error: null });
 
             const A1 = new AddonFactory("Addon1")
                 .addCallback(cbA1);
             const A2 = new AddonFactory("Addon2")
-                .addCallback(cbA2)
-                .addCallback(cbStream);
+                .addCallback(cbA2);
 
             const addonsDir = join(communicationDir, "addons");
             await mkdir(addonsDir);
@@ -95,7 +91,6 @@ test.group("Addons Communication", (group) => {
         Addon1.prependListener("message", (id, target) => {
             assert.strictEqual(true, typeof target === "string");
         });
-        await Addon1.executeCallback("callme");
         await new Promise((resolve) => setTimeout(resolve, 1));
 
         // Exit properly
