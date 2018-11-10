@@ -53,7 +53,7 @@
         "rimraf": "^2.6.2"
     },
     "dependencies": {
-        "@slimio/addon": "^0.13.1",
+        "@slimio/addon": "^0.13.2",
         "@slimio/config": "^0.7.0",
         "@slimio/is": "^1.2.0",
         "@slimio/safe-emitter": "^1.0.1",
