@@ -40,6 +40,8 @@ function main() {
             const { callback, args = [] } = payload.data;
             try {
                 const responseBody = await addon.executeCallback(callback, header, ...args);
+
+                // TODO: Implement stream!
                 process.send({ target: 1, header, data: { body: responseBody } });
             }
             catch (error) {

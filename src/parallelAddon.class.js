@@ -107,6 +107,7 @@ class ParallelAddon extends SafeEmitter {
         let body, error;
 
         try {
+            // How to catch multiple messages ?
             [body, error = null] = await this.callbackResponse.once(header.id, MESSAGE_TIMEOUT_MS);
         }
         catch (error) {
