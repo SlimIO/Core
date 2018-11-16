@@ -1,8 +1,10 @@
 const [directory] = process.argv.slice(2);
 const Core = require("../..");
 
-function errorHandler(error) {
-    console.error(error);
+console.log(process.env.NODE_V8_COVERAGE);
+
+function errorHandler() {
+    console.log("> TEST FAILED!");
     process.exit(1);
 }
 

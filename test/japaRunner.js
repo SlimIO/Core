@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 // Require NodeJS Dependencies
 const { join } = require("path");
 

@@ -15,7 +15,12 @@ addonB.on("addonLoaded", async(addonName) => {
         addonB.sendMessage("addonA.cb_test").subscribe(
             () => console.log("> TEST PASS!"),
             () => console.log("> TEST FAILED!"),
-            () => console.log("> TEST COMPLETED!")
+            () => {
+                console.log("> TEST COMPLETED!");
+                setImmediate(() => {
+                    process.exit(0);
+                });
+            }
         );
     }
 });

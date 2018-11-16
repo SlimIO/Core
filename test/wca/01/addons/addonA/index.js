@@ -58,6 +58,9 @@ addonA.on("addonLoaded", async(addonName) => {
         catch (err) {
             assert.strictEqual(err.message, "Opps!");
             console.log("> TEST COMPLETED!");
+            setImmediate(() => {
+                process.exit(0);
+            });
         }
     }
 });

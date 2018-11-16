@@ -41,8 +41,6 @@ async function runCase(test, id) {
             break;
         }
     }
-
-    proc.kill();
 }
 
 test.group("WCA", (group) => {
