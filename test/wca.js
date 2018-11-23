@@ -44,7 +44,6 @@ async function runCase(test, id) {
 }
 
 test.group("WCA", (group) => {
-
     group.after(async() => {
         await Promise.all([
             unlink(join(WCA_DIR, "01", "agent.json")),
@@ -151,5 +150,4 @@ test.group("WCA", (group) => {
         await writeFile(join(WCA_DIR, "02", "agent.json"), JSON.stringify(config));
         await runCase(test, "02");
     });
-
 });

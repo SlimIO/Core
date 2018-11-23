@@ -9,7 +9,6 @@ const rimraf = require("rimraf");
 const { searchForAddons, generateDump } = require("../src/utils");
 
 test.group("Utils", (group) => {
-
     // GROUP CONSTANTS
     const UTILS_DIR = join(__dirname, "utils");
 
@@ -92,5 +91,4 @@ test.group("Utils", (group) => {
         assert.deepEqual(dump.stack, ["test1", "test2"], "dump.stack == [\"test1\", \"test2\"]");
         await unlink(dumpFile);
     });
-
 });

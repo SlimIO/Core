@@ -29,7 +29,6 @@ function defaultHeader() {
  * @property {SafeEmitter} events Message events container
  */
 class ParallelAddon extends SafeEmitter {
-
     /**
      * @constructor
      * @param {!String} root root directory
@@ -104,7 +103,8 @@ class ParallelAddon extends SafeEmitter {
      */
     async executeCallback(callback, header = defaultHeader(), ...args) {
         this.cp.send({ target: 1, header, data: { callback, args } });
-        let body, error;
+        let body;
+        let error;
 
         try {
             // How to catch multiple messages ?
@@ -119,7 +119,6 @@ class ParallelAddon extends SafeEmitter {
 
         return body;
     }
-
 }
 
 module.exports = ParallelAddon;

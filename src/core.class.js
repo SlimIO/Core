@@ -27,7 +27,6 @@ const AVAILABLE_CPU_LEN = os.cpus().length;
  * @property {String} root
  */
 class Core {
-
     /**
      * @constructor
      * @param {!String} dirname Core dirname
@@ -142,7 +141,10 @@ class Core {
         let addon = null;
         const isStandalone = AVAILABLE_CPU_LEN > 1 ? standalone : false;
 
-        if (!this.addons.has(addonName)) {
+        if (this.addons.has(addonName)) {
+            addon = this.addons.get(addonName);
+        }
+        else {
             if (!active) {
                 return void 0;
             }
@@ -155,8 +157,8 @@ class Core {
                     this.stdout(`Load (Parallel) addon with name => ${addonName}`);
                 }
                 else {
-                    // addon = await import(addonEntryFile);
-                    // console.log(addon);
+                    // TODO: Replace by lazy import when possible
+                    // eslint-disable-next-line
                     addon = require(addonEntryFile);
                     if (addon.constructor.name !== "Addon") {
                         throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
@@ -179,9 +181,6 @@ class Core {
 
                 return void 0;
             }
-        }
-        else {
-            addon = this.addons.get(addonName);
         }
 
         const stateToBeTriggered = active ? "start" : "stop";
@@ -324,6 +323,7 @@ class Core {
         addon.prependListener("start", () => {
             for (const callback of callbacks) {
                 this.stdout(`Setup routing table: ${name}.${callback}`);
+                // eslint-disable-next-line
                 this.routingTable.set(`${name}.${callback}`, (id, from, args) => {
                     return addon.executeCallback(callback, { id, from }, ...args);
                 });
@@ -366,7 +366,6 @@ class Core {
 
         this.hasBeenInitialized = false;
     }
-
 }
 
 // Default Core Configuration

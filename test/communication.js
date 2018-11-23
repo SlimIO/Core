@@ -30,7 +30,6 @@ class MyStream extends ComponentFactory {
 const communicationDir = join(__dirname, "communication");
 
 test.group("Addons Communication", (group) => {
-
     // Setup Group
     group.before(async() => {
         await createDirectory(communicationDir);
@@ -96,5 +95,4 @@ test.group("Addons Communication", (group) => {
         // Exit properly
         await _core.exit();
     });
-
 });

@@ -16,8 +16,8 @@ const { AddonFactory } = require("@slimio/addon-factory");
 // Require Internal Dependencies
 const Core = require("../index");
 
+// eslint-disable-next-line
 test.group("Default core properties, methods and behavior", (group) => {
-
     group.before(async() => {
         const addonDir = join(__dirname, "addons");
         await Promise.all([
@@ -150,7 +150,6 @@ test.group("Default core properties, methods and behavior", (group) => {
 });
 
 test.group("Addons Loading", (group) => {
-
     group.afterEach(async() => {
         await unlink(join(__dirname, "agent.json"));
     });
