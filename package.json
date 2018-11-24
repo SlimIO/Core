@@ -7,7 +7,7 @@
         "prepublish": "pkg-ok",
         "test": "node test/japaRunner.js",
         "doc": "jsdoc -c ./jsdoc.json -r -R ./README.md -P ./package.json --verbose",
-        "coverage": "npx c8 -r=\"html\" npm test"
+        "coverage": "c8 -r=\"html\" npm test"
     },
     "repository": {
         "type": "git",
