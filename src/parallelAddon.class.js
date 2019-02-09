@@ -5,10 +5,10 @@ const { fork } = require("child_process");
 // Require Third-party Dependencies
 const uuid = require("uuid/v4");
 const SafeEmitter = require("@slimio/safe-emitter");
+const IPC = require("@slimio/ipc");
 
 // SCRIPT CONSTANTS
 const FORK_CONTAINER_PATH = join(__dirname, "forked.container.js");
-const MESSAGE_TIMEOUT_MS = 750;
 
 /**
  * @func defaultHeader
@@ -25,8 +25,7 @@ function defaultHeader() {
  *
  * @property {String} root Addon root path
  * @property {String} addonName name of the Wrappered addon
- * @property {ChildProcesses} cp Node.JS Child Processes reference!
- * @property {SafeEmitter} events Message events container
+ * @property {IPC} ipc IPC Module
  */
 class ParallelAddon extends SafeEmitter {
     /**
@@ -47,7 +46,6 @@ class ParallelAddon extends SafeEmitter {
 
         this.root = root;
         this.addonName = addonName;
-        this.callbackResponse = new SafeEmitter();
     }
 
     /**
@@ -58,34 +56,27 @@ class ParallelAddon extends SafeEmitter {
      */
     createForkProcesses() {
         // If there is already a Child Processses running, then return
-        if (typeof this.cp !== "undefined") {
+        if (typeof this.ipc !== "undefined") {
             return void 0;
         }
 
-        this.cp = fork(FORK_CONTAINER_PATH, [this.root]);
-        this.cp.on("error", console.error);
-        this.cp.on("message", ({ target, header, data }) => {
-            switch (target) {
-                case 1:
-                    this.callbackResponse.emit(header.id, data.body, data.error);
-                    break;
-                case 2:
-                    this.emit("message", header.id, data.target, data.args);
-                    break;
-                case 3:
-                    this.emit(data);
-                    break;
-                default:
-                    // Do nothing on default
-            }
-        });
-        this.cp.on("close", (code) => {
-            console.log(`Addon ${this.addonName} closed with signal code: ${code}`);
+        const cp = fork(FORK_CONTAINER_PATH, [this.root]);
+        this.ipc = new IPC(cp);
+
+        // Catch events
+        this.ipc.on("event", (name, next) => {
+            this.emit(name);
+            next();
         });
 
-        this.on("addonLoaded", (addonName) => {
-            this.cp.send({ target: 3, header: { from: addonName }, data: "addonLoaded" });
+        // Catch messages
+        this.ipc.on("message", (payload, next) => {
+            const { header, data } = payload;
+            this.emit("message", header.id, data.target, data.args);
+            next();
         });
+
+        this.on("addonLoaded", (from) => this.ipc.send("event", { from, name: "addonLoaded" }));
 
         return void 0;
     }
@@ -102,22 +93,17 @@ class ParallelAddon extends SafeEmitter {
      * @throws {Error}
      */
     async executeCallback(callback, header = defaultHeader(), ...args) {
-        this.cp.send({ target: 1, header, data: { callback, args } });
-        let body;
-        let error;
-
         try {
-            // How to catch multiple messages ?
-            [body, error = null] = await this.callbackResponse.once(header.id, MESSAGE_TIMEOUT_MS);
+            const { data: { body, error } } = await this.ipc.send("message", { header, data: { callback, args } });
+            if (error) {
+                throw new Error(error);
+            }
+
+            return body;
         }
         catch (error) {
-            throw new Error(`(ParrallelAddon) Message id ${header.id} timeout (${MESSAGE_TIMEOUT_MS}ms)`);
+            throw new Error(`(ParrallelAddon) Message id ${header.id} error: ${error.toString()}`);
         }
-        if (error !== null) {
-            throw new Error(error);
-        }
-
-        return body;
     }
 }
 

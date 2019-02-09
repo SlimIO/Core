@@ -7,6 +7,7 @@ require("make-promises-safe");
 const Config = require("@slimio/config");
 const { createDirectory } = require("@slimio/utils");
 const is = require("@slimio/is");
+const IPC = require("@slimio/ipc");
 
 // Require Internal Dependencies
 const { searchForAddons, generateDump } = require("./utils");
@@ -245,19 +246,20 @@ class Core {
                     }
 
                     if (isObj && body.constructor.name === "Stream") {
+                        const wS = new IPC.Stream();
+                        addon.ipc.send("response", wS);
                         for await (const buf of body) {
-                            addon.cp.send({
-                                target: 2, header, data: { body: buf.toString(), completed: false }
-                            });
+                            wS.write({ header, data: { body: buf.toString(), completed: false } });
                         }
-                        addon.cp.send({ target: 2, header, data: { completed: true } });
+                        wS.write({ header, data: { completed: true } });
+                        wS.end();
                     }
                     else {
-                        addon.cp.send({ target: 2, header, data: { body } });
+                        addon.ipc.send("response", { header, data: { body } });
                     }
                 }
                 catch (error) {
-                    addon.cp.send({ target: 2, header, data: { error: error.message } });
+                    addon.ipc.send("response", { header, data: { error: error.message } });
                 }
             };
         }

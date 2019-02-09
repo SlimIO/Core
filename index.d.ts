@@ -29,6 +29,10 @@ declare class Core {
  */
 declare namespace Core {
 
+    interface IPCChannels {
+        event: (data: string) => void;
+    }
+
     interface CallbackGetInfo {
         uid: string;
         name: string;
