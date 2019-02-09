@@ -12,6 +12,6 @@ configure({
         join(__dirname, "communication.js"),
         join(__dirname, "utils.js"),
         join(__dirname, "test.js"),
-        join(__dirname, "wca.js")
+        // join(__dirname, "wca.js")
     ]
 });
