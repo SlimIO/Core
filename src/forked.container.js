@@ -81,7 +81,7 @@ addon.on("start", () => {
 
 // Setup stop listener
 addon.on("stop", () => {
-    addon.removeAllListeners("message", message);
+    addon.removeAllListeners("message");
     slave.send("event", "stop");
     setImmediate(process.exit);
 });
