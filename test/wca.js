@@ -29,6 +29,7 @@ async function runCase(test, id) {
         if (str === "") {
             continue;
         }
+        // console.log(str);
 
         if (str.includes("TEST COMPLETED!")) {
             break;
@@ -45,10 +46,15 @@ async function runCase(test, id) {
 
 test.group("WCA", (group) => {
     group.after(async() => {
-        await Promise.all([
-            unlink(join(WCA_DIR, "01", "agent.json")),
-            unlink(join(WCA_DIR, "02", "agent.json"))
-        ]);
+        try {
+            await Promise.all([
+                unlink(join(WCA_DIR, "01", "agent.json")),
+                unlink(join(WCA_DIR, "02", "agent.json"))
+            ]);
+        }
+        catch (err) {
+            // Do nothing
+        }
     });
 
     test("Case 01 (Standalone false)", async(test) => {
@@ -75,17 +81,17 @@ test.group("WCA", (group) => {
         await runCase(test, "01");
     });
 
-    test("Case 01 (Standalone mix right)", async(test) => {
-        const config = {
-            addons: {
-                addonA: { active: true, standalone: false },
-                addonB: { active: true, standalone: true }
-            }
-        };
+    // test("Case 01 (Standalone mix right)", async(test) => {
+    //     const config = {
+    //         addons: {
+    //             addonA: { active: true, standalone: false },
+    //             addonB: { active: true, standalone: true }
+    //         }
+    //     };
 
-        await writeFile(join(WCA_DIR, "01", "agent.json"), JSON.stringify(config));
-        await runCase(test, "01");
-    });
+    //     await writeFile(join(WCA_DIR, "01", "agent.json"), JSON.stringify(config));
+    //     await runCase(test, "01");
+    // });
 
     test("Case 01 (Standalone true)", async(test) => {
         const config = {
