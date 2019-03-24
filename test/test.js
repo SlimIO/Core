@@ -131,22 +131,22 @@ test.group("Default core properties, methods and behavior", (group) => {
         }
     });
 
-    // test("Exit core", async(assert) => {
-    //     const core = new Core(__dirname, { silent: true });
-    //     await core.initialize();
-    //     await new Promise((resolve) => setImmediate(resolve));
+    test("Exit core", async(assert) => {
+        const core = new Core(__dirname, { silent: true });
+        await core.initialize();
+        await new Promise((resolve) => setTimeout(resolve, 500));
 
-    //     assert.strictEqual(core.hasBeenInitialized, true, "Core initialized state is true");
-    //     for (const addon of core.addons.values()) {
-    //         assert.strictEqual(addon.isStarted, true, "Addon is started equal true");
-    //     }
+        assert.strictEqual(core.hasBeenInitialized, true, "Core initialized state is true");
+        for (const addon of core.addons.values()) {
+            assert.strictEqual(addon.isStarted, true, "Addon is started equal true");
+        }
 
-    //     await core.exit();
-    //     assert.strictEqual(core.hasBeenInitialized, false, "Core initialized state is false");
-    //     for (const addon of core.addons.values()) {
-    //         assert.strictEqual(addon.isStarted, false, "Addon is started equal false");
-    //     }
-    // });
+        await core.exit();
+        assert.strictEqual(core.hasBeenInitialized, false, "Core initialized state is false");
+        for (const addon of core.addons.values()) {
+            assert.strictEqual(addon.isStarted, false, "Addon is started equal false");
+        }
+    });
 });
 
 test.group("Addons Loading", (group) => {
