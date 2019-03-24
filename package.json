@@ -46,7 +46,7 @@
     },
     "dependencies": {
         "@slimio/addon": "^0.16.0",
-        "@slimio/config": "^0.12.0",
+        "@slimio/config": "^0.13.0",
         "@slimio/ipc": "^0.1.1",
         "@slimio/is": "^1.4.0",
         "@slimio/safe-emitter": "^1.0.6",
