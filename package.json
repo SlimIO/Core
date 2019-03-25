@@ -52,7 +52,6 @@
         "@slimio/safe-emitter": "^1.0.6",
         "@slimio/scheduler": "^0.6.0",
         "@slimio/utils": "^0.8.0",
-        "make-promises-safe": "^5.0.0",
-        "uuid": "^3.3.2"
+        "make-promises-safe": "^5.0.0"
     }
 }
