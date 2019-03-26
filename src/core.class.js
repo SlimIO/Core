@@ -65,6 +65,8 @@ class Core {
             defaultSchema: Core.DEFAULT_SCHEMA,
             reloadDelay: autoReload ? 500 : void 0
         });
+
+        global.slimio_core = this;
     }
 
     /**
