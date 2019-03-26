@@ -1,6 +1,4 @@
 const Core = require("./src/core.class");
-
-// Setup core version in process.env
-process.env.coreVersion = "0.4.0";
+global.coreVersion = "0.7.2";
 
 module.exports = Core;
