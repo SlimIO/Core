@@ -51,7 +51,7 @@
         "@slimio/is": "^1.5.0",
         "@slimio/safe-emitter": "^1.0.6",
         "@slimio/scheduler": "^0.6.0",
-        "@slimio/utils": "^0.8.0",
+        "@slimio/utils": "^0.9.0",
         "make-promises-safe": "^5.0.0"
     }
 }
