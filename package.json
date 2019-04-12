@@ -4,7 +4,7 @@
     "description": "Slim.IO Core",
     "main": "index.js",
     "scripts": {
-        "prepublish": "pkg-ok",
+        "prepublishOnly": "pkg-ok",
         "test": "node test/japaRunner.js",
         "doc": "jsdoc -c ./jsdoc.json -r -R ./README.md -P ./package.json --verbose",
         "coverage": "c8 -r=\"html\" npm test"
@@ -13,6 +13,10 @@
         "type": "git",
         "url": "git+https://github.com/SlimIO/Core.git"
     },
+    "engines": {
+        "node": ">=10"
+    },
+    "keywords": ["SlimIO", "Core"],
     "author": "SlimIO",
     "license": "MIT",
     "bugs": {
