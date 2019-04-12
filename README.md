@@ -1,6 +1,9 @@
 # Core
 The Core was created to load the SlimIO addons, it is able to get a connection communication channel (IPC) between each addons.
 
+## Requirements
+- Node.js v10 or higher
+
 ## Getting Started
 
 This package is available in the Node Package Repository and can be easily installed with [npm](https://docs.npmjs.com/getting-started/what-is-npm) or [yarn](https://yarnpkg.com).
@@ -57,3 +60,6 @@ Initialize the Core (it will load configuration and addons). The loading of addo
 Stop the core and all affiliated ressources (addons, config etc..).
 
 > Note: Think to exit the process with an iteration + 1 (with setImmediate).
+
+## License
+MIT
