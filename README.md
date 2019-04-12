@@ -42,7 +42,9 @@ main().catch(console.error);
 
 ## API
 
-### constructor(dirname: string, options?)
+<details><summary>constructor(dirname: string, options?: Core.ConstructorOptions)</summary>
+<br />
+
 Create a new instance of Core Object. The argument `dirname` is the root directory where the core have to load his configuration and all addons.
 
 The constructor take an optional options object which contain all options to configure the core Agent.
@@ -52,14 +54,21 @@ interface ConstructorOptions {
     autoReload?: number;
 }
 ```
+</details>
 
-### initialize(): Promise<this>
+<details><summary>initialize(): Promise< this ></summary>
+<br />
+
 Initialize the Core (it will load configuration and addons). The loading of addons is lazy, so the response will be returned before the addons have had time to fully load.
+</details>
 
-### exit(): Promise<void>
+<details><summary>exit(): Promise< void ></summary>
+<br />
+
 Stop the core and all affiliated ressources (addons, config etc..).
 
 > Note: Think to exit the process with an iteration + 1 (with setImmediate).
+</details>
 
 ## License
 MIT
