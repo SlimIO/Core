@@ -57,6 +57,7 @@ typings/
 # dotenv environment variables file
 .environment
 
-jsdoc
-
+jsdoc/
+docs/
+.env
 test/*/*/debug/
