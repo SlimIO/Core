@@ -10,7 +10,7 @@ declare class Core {
     // Properties
     root: string;
     addons: Map<string, Addon>;
-    config: Config<any>;
+    config: Config<Core.AddonsCFG>;
     silent: boolean;
 
     static DEFAULT_CONFIGURATION: Core.CFG;
@@ -20,7 +20,6 @@ declare class Core {
     private setupAddonListener(addon: Addon): Promise<Addon>;
     private setupAddonConfiguration(addonName: string, newConfig: Core.AddonsCFG): void;
     initialize(): Promise<this>;
-    generateDump(error: object): string;
     exit(): Promise<void>;
 }
 
