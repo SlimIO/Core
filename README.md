@@ -70,5 +70,18 @@ Stop the core and all affiliated ressources (addons, config etc..).
 > Note: Think to exit the process with an iteration + 1 (with setImmediate).
 </details>
 
+## Dependencies
+
+|Name|Refactoring|Security Risk|Usage|
+|---|---|---|---|
+|[@slimio/addon](https://github.com/SlimIO/Addon#readme)|⚠️Major|High|Addon default class|
+|[@slimio/config](https://github.com/SlimIO/Config#readme)|Minor|High|Configuration interaction|
+|[@slimio/ipc](https://github.com/SlimIO/ipc#readme)|⚠️Major|High|Inter-process communication|
+|[@slimio/is](https://github.com/SlimIO/is#readme)|Minor|Low|Type checker|
+|[@slimio/safe-emitter](https://github.com/SlimIO/safeEmitter#readme)|Minor|High|Safe emittter|
+|[@slimio/scheduler](https://github.com/SlimIO/Scheduler#readme)|Minor|Low|Scheduler|
+|[@slimio/utils](https://github.com/SlimIO/Utils#readme)|Minor|High|Bunch of useful functions|
+|[make-promises-safe](https://github.com/mcollina/make-promises-safe#readme)|⚠️Major|High|Promise not exit process when fail|
+
 ## License
 MIT
