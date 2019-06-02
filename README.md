@@ -1,8 +1,20 @@
 # Core
-The Core was created to load the SlimIO addons, it is able to get a connection communication channel (IPC) between each addons.
+The Core was created to load and manage SlimIO addons, it will create/handle communication between each addons.
+
+<p align="center">
+    <img src="https://i.imgur.com/POLYji8.png" width="400">
+</p>
+
+Each addon **are isolated from each others** (designed like **container above**).
 
 ## Requirements
 - Node.js v10 or higher
+
+## Features / Roles
+- (Re)loading addons.
+- Manage communication between addons.
+- Retention of communications in case of anomalies.
+- Monitoring isolation.
 
 ## Getting Started
 
@@ -15,8 +27,7 @@ $ yarn add @slimio/core
 ```
 
 ## Usage example
-
-A script that demonstrate how to load a default core (JSON Configure will be created dynamically).
+A script that demonstrate how to load a default core (Configuration will be created dynamically).
 
 ```js
 const Core = require("@slimio/core");
