@@ -16,7 +16,10 @@
     "engines": {
         "node": ">=10"
     },
-    "keywords": ["SlimIO", "Core"],
+    "keywords": [
+        "SlimIO",
+        "Core"
+    ],
     "author": "SlimIO",
     "license": "MIT",
     "bugs": {
@@ -29,7 +32,7 @@
         }
     },
     "devDependencies": {
-        "@commitlint/cli": "^7.5.2",
+        "@commitlint/cli": "^8.0.0",
         "@commitlint/config-conventional": "^7.5.0",
         "@escommunity/minami": "^1.0.0",
         "@slimio/addon-factory": "^0.4.0",
