@@ -247,7 +247,8 @@ class Core {
                         throw new Error(body.error);
                     }
 
-                    if (isObj && body.constructor.name === "Stream") {
+                    const isAStream = !is.undefined(body.constructor) && body.constructor.name === "Stream";
+                    if (isObj && isAStream) {
                         const wS = new IPC.Stream();
                         addon.ipc.send("response", wS);
                         for await (const buf of body) {
@@ -292,7 +293,8 @@ class Core {
                     }
 
                     const observer = addon.observers.get(messageId);
-                    if (isObj && responseBody.constructor.name === "Stream") {
+                    const isAStream = !is.undefined(responseBody.constructor) && responseBody.constructor.name === "Stream";
+                    if (isObj && isAStream) {
                         for await (const buf of responseBody) {
                             observer.next(buf.toString());
                         }
