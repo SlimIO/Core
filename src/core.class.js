@@ -19,6 +19,16 @@ const AVAILABLE_CPU_LEN = os.cpus().length;
 /** @typedef {{ active: boolean, standalone: boolean? }} AddonProperties */
 /** @typedef {Object.<string, AddonProperties>} AddonCFG */
 
+function isStream(variable) {
+    if (typeof variable === "undefined" ||
+        Object.getPrototypeOf(variable) === null ||
+        variable.constructor.name !== "Stream") {
+        return false;
+    }
+
+    return true;
+}
+
 /**
  * @class Core
  * @property {Config} config Agent (core) configuration file
@@ -247,8 +257,7 @@ class Core {
                         throw new Error(body.error);
                     }
 
-                    const isAStream = !is.undefined(body.constructor) && body.constructor.name === "Stream";
-                    if (isObj && isAStream) {
+                    if (isStream(body)) {
                         const wS = new IPC.Stream();
                         addon.ipc.send("response", wS);
                         for await (const buf of body) {
@@ -282,25 +291,24 @@ class Core {
                 }
 
                 try {
-                    const responseBody = await this.routingTable.get(target)(messageId, name, args);
+                    const body = await this.routingTable.get(target)(messageId, name, args);
                     if (!addon.observers.has(messageId)) {
                         return;
                     }
 
-                    const isObj = is.object(responseBody);
-                    if (isObj && !is.nullOrUndefined(responseBody.error)) {
-                        throw new Error(responseBody.error);
+                    const isObj = is.object(body);
+                    if (isObj && !is.nullOrUndefined(body.error)) {
+                        throw new Error(body.error);
                     }
 
                     const observer = addon.observers.get(messageId);
-                    const isAStream = !is.undefined(responseBody.constructor) && responseBody.constructor.name === "Stream";
-                    if (isObj && isAStream) {
-                        for await (const buf of responseBody) {
+                    if (isStream(body)) {
+                        for await (const buf of body) {
                             observer.next(buf.toString());
                         }
                     }
                     else {
-                        observer.next(responseBody);
+                        observer.next(body);
                     }
                     observer.complete();
                 }
