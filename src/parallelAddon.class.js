@@ -1,11 +1,11 @@
 // Require Node.JS dependencies
 const { join } = require("path");
 const { fork } = require("child_process");
-const { randomBytes } = require("crypto");
 
 // Require Third-party Dependencies
 const SafeEmitter = require("@slimio/safe-emitter");
 const IPC = require("@slimio/ipc");
+const uuid = require("uuid/v4");
 
 // SCRIPT CONSTANTS
 const FORK_CONTAINER_PATH = join(__dirname, "forked.container.js");
@@ -16,7 +16,7 @@ const FORK_CONTAINER_PATH = join(__dirname, "forked.container.js");
  * @return {Object}
  */
 function defaultHeader() {
-    return { from: "core", id: randomBytes(16).toString() };
+    return { from: "core", id: uuid() };
 }
 
 /**
