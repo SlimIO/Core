@@ -8,6 +8,7 @@ const Config = require("@slimio/config");
 const { createDirectory } = require("@slimio/utils");
 const is = require("@slimio/is");
 const IPC = require("@slimio/ipc");
+const isStream = require("is-stream");
 
 // Require Internal Dependencies
 const { searchForAddons, generateDump } = require("./utils");
@@ -18,16 +19,6 @@ const AVAILABLE_CPU_LEN = os.cpus().length;
 
 /** @typedef {{ active: boolean, standalone: boolean? }} AddonProperties */
 /** @typedef {Object.<string, AddonProperties>} AddonCFG */
-
-function isStream(variable) {
-    if (typeof variable === "undefined" ||
-        Object.getPrototypeOf(variable) === null ||
-        variable.constructor.name !== "Stream") {
-        return false;
-    }
-
-    return true;
-}
 
 /**
  * @class Core
@@ -244,7 +235,12 @@ class Core {
              * @returns {void}
              */
             messageHandler = async(messageId, target, args) => {
-                if (!this.routingTable.has(target)) {
+                noTarget: if (!this.routingTable.has(target)) {
+                    await new Promise((resolve) => setTimeout(resolve, 750));
+                    if (this.routingTable.has(target)) {
+                        break noTarget;
+                    }
+
                     return;
                 }
 
@@ -286,7 +282,12 @@ class Core {
              * @returns {void}
              */
             messageHandler = async(messageId, target, args) => {
-                if (!this.routingTable.has(target)) {
+                noTarget: if (!this.routingTable.has(target)) {
+                    await new Promise((resolve) => setTimeout(resolve, 750));
+                    if (this.routingTable.has(target)) {
+                        break noTarget;
+                    }
+
                     return;
                 }
 

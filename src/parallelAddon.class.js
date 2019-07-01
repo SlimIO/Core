@@ -93,17 +93,12 @@ class ParallelAddon extends SafeEmitter {
      * @throws {Error}
      */
     async executeCallback(callback, header = defaultHeader(), ...args) {
-        try {
-            const { data: { body, error } } = await this.ipc.send("message", { header, data: { callback, args } });
-            if (error) {
-                throw new Error(error);
-            }
+        const { data: { body, error } } = await this.ipc.send("message", { header, data: { callback, args } });
+        if (error) {
+            throw new Error(error);
+        }
 
-            return body;
-        }
-        catch (error) {
-            throw new Error(`(ParrallelAddon) Message id ${header.id} error: ${error.toString()}`);
-        }
+        return body;
     }
 }
 

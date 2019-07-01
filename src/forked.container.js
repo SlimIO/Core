@@ -68,7 +68,9 @@ slave.on("event", (payload, next) => {
 });
 
 // Setup ready listener
-addon.on("ready", () => slave.send("event", "ready"));
+addon.on("ready", () => {
+    slave.send("event", "ready");
+});
 
 // Setup start listener
 addon.on("start", () => {

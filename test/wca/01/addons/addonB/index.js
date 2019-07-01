@@ -3,15 +3,12 @@ const assert = require("assert");
 
 const addonB = new Addon("addonB", {
     version: "1.0.0"
-});
+}).lockOn("events");
 
 // eslint-disable-next-line
 addonB.registerCallback(async function cb_test(header) {
     assert.strictEqual(header.from, "addonA");
-    const ret = await new Promise((resolve, reject) => {
-        addonB.sendMessage(`${header.from}.cb_test`, { args: [1] })
-            .subscribe(resolve, reject);
-    });
+    const ret = await addonB.sendOne(`${header.from}.cb_test`, [1]);
 
     return ret;
 });

@@ -3,18 +3,9 @@ const assert = require("assert");
 
 const addonA = new Addon("addonA", {
     version: "1.0.0"
-}).lockOn("addonB");
-
-/**
- * @func sendMessage
- * @param {!String} target message target
- * @returns {Promise<any>}
- */
-function sendMessage(target) {
-    return new Promise((resolve, reject) => {
-        addonA.sendMessage(target).subscribe(resolve, reject);
-    });
-}
+})
+    .lockOn("events")
+    .lockOn("addonB");
 
 // eslint-disable-next-line
 addonA.registerCallback(async function cb_test(header, ok) {
@@ -24,14 +15,11 @@ addonA.registerCallback(async function cb_test(header, ok) {
     return { ok };
 });
 
-addonA.on("start", () => {
-    addonA.ready();
-});
-
 addonA.on("awake", async() => {
+    addonA.ready();
     scope: {
         try {
-            const { ok } = await sendMessage("addonB.cb_test");
+            const { ok } = await addonA.sendOne("addonB.cb_test");
             assert.strictEqual(ok, 1);
         }
         catch (err) {
@@ -41,7 +29,7 @@ addonA.on("awake", async() => {
         }
 
         try {
-            const ret = await sendMessage("addonB.cb_void");
+            const ret = await addonA.sendOne("addonB.cb_void");
             assert.strictEqual(ret, void 0);
         }
         catch (err) {
@@ -51,7 +39,7 @@ addonA.on("awake", async() => {
         }
 
         try {
-            await sendMessage("addonB.cb_fail");
+            await addonA.sendOne("addonB.cb_fail");
         }
         catch (err) {
             assert.strictEqual(err.message, "Opps!");
