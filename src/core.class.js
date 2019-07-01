@@ -108,6 +108,7 @@ class Core {
 
         // If the configuration is empty, search for addons on the disk
         if (Object.keys(addonsCfg).length === 0) {
+            this.stdout("Searching for addons locally");
             addonsCfg = await searchForAddons(this.root);
             this.config.set("addons", addonsCfg);
         }
@@ -158,7 +159,7 @@ class Core {
                 if (isStandalone) {
                     addon = new ParallelAddon(addonEntryFile, addonName);
                     addon.createForkProcesses();
-                    this.stdout(`Load (Parallel) addon with name => ${addonName}`);
+                    this.stdout(`Load addon '${addonName}' on his own Node.js process!`);
                 }
                 else {
                     // TODO: Replace by lazy import when possible
@@ -176,7 +177,7 @@ class Core {
                             `An error occured in addon '${addonName}' (event '${eventName}') - ERR dumped at: ${dumpFile}`
                         );
                     });
-                    this.stdout(`Load (In same process as core) addon with name => ${addonName}`);
+                    this.stdout(`Load addon '${addonName}' on the current Node.js process!`);
                 }
 
                 this.addons.set(addonName, addon);
@@ -246,8 +247,9 @@ class Core {
                         break noTarget;
                     }
 
+                    this.stdout(`Unable to found (callback) target '${target}' requested by addon '${name}'`);
                     addon.ipc.send("response", { header, data: {
-                        error: `Unable to found target with name: '${target}'.`
+                        error: `Unable to found (callback) target '${target}' requested by addon '${name}'`
                     } });
 
                     return;
@@ -296,11 +298,13 @@ class Core {
                         break noTarget;
                     }
 
+                    this.stdout(`Unable to found (callback) target '${target}' requested by addon '${name}'`);
                     if (!addon.observers.has(messageId)) {
                         return;
                     }
+
                     const observer = addon.observers.get(messageId);
-                    observer.error(`Unable to found target with name: '${target}'.`);
+                    observer.error(`Unable to found (callback) target '${target}' requested by addon '${name}'`);
 
                     return;
                 }
