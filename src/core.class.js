@@ -198,9 +198,11 @@ class Core {
             setImmediate(() => {
                 addon.executeCallback(stateToBeTriggered);
             });
-            if (!active) {
-                this.addons.delete(addonName);
-            }
+
+            // TODO: do we cleanup inactive addons ?
+            // if (!active) {
+            //     this.addons.delete(addonName);
+            // }
         }
         catch (error) {
             const dumpFile = generateDump(this.root, error);
