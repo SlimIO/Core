@@ -3,7 +3,6 @@ const { join } = require("path");
 const os = require("os");
 
 // Require Third-party dependencies
-require("make-promises-safe");
 const Config = require("@slimio/config");
 const { createDirectory } = require("@slimio/utils");
 const is = require("@slimio/is");
