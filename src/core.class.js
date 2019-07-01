@@ -235,16 +235,21 @@ class Core {
              * @returns {void}
              */
             messageHandler = async(messageId, target, args) => {
+                const header = { from: target, id: messageId };
+
                 noTarget: if (!this.routingTable.has(target)) {
                     await new Promise((resolve) => setTimeout(resolve, 750));
                     if (this.routingTable.has(target)) {
                         break noTarget;
                     }
 
+                    addon.ipc.send("response", { header, data: {
+                        error: `Unable to found any target '${target}' !`
+                    } });
+
                     return;
                 }
 
-                const header = { from: target, id: messageId };
                 try {
                     const body = await this.routingTable.get(target)(messageId, name, args);
 
@@ -287,6 +292,12 @@ class Core {
                     if (this.routingTable.has(target)) {
                         break noTarget;
                     }
+
+                    if (!addon.observers.has(messageId)) {
+                        return;
+                    }
+                    const observer = addon.observers.get(messageId);
+                    observer.error(`Unable to found any target '${target}' !`);
 
                     return;
                 }
