@@ -74,7 +74,7 @@ function generateDump(root = __dirname, error) {
     const dumpStr = JSON.stringify({
         date: new Date(timestamp).toString(),
         code: error.code || null,
-        message: error.message || "",
+        message: typeof error === "string" ? error : error.message || "",
         stack: error.stack ? error.stack.split("\n") : ""
     }, null, 4);
 

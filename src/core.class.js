@@ -168,9 +168,12 @@ class Core {
                         throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
                     }
                     addon.catch((error, eventName) => {
+                        if (eventName === "start") {
+                            addon.executeCallback("stop");
+                        }
                         const dumpFile = generateDump(this.root, error);
                         this.stdout(
-                            `En Error occured in ${addonName}, event ${eventName} (ERROR dumped in: ${dumpFile})`
+                            `An error occured in addon '${addonName}' (event '${eventName}') - ERR dumped at: ${dumpFile}`
                         );
                     });
                     this.stdout(`Load (In same process as core) addon with name => ${addonName}`);
@@ -244,7 +247,7 @@ class Core {
                     }
 
                     addon.ipc.send("response", { header, data: {
-                        error: `Unable to found any target '${target}' !`
+                        error: `Unable to found target with name: '${target}'.`
                     } });
 
                     return;
@@ -297,7 +300,7 @@ class Core {
                         return;
                     }
                     const observer = addon.observers.get(messageId);
-                    observer.error(`Unable to found any target '${target}' !`);
+                    observer.error(`Unable to found target with name: '${target}'.`);
 
                     return;
                 }
@@ -348,7 +351,7 @@ class Core {
         // Setup start listener
         addon.prependListener("start", () => {
             for (const callback of callbacks) {
-                this.stdout(`Setup routing table: ${name}.${callback}`);
+                this.stdout(`Setup routing target: ${name}.${callback}`);
                 // eslint-disable-next-line
                 this.routingTable.set(`${name}.${callback}`, (id, from, args) => {
                     return addon.executeCallback(callback, { id, from }, ...args);
