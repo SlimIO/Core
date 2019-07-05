@@ -61,3 +61,4 @@ jsdoc/
 docs/
 .env
 test/*/*/debug/
+temp/
