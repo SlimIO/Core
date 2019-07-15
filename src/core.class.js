@@ -159,7 +159,7 @@ class Core {
                     // TODO: Replace by lazy import when possible
                     // eslint-disable-next-line
                     addon = require(addonEntryFile);
-                    if (addon.constructor.name !== "Addon") {
+                    if (Object.getPrototypeOf(addon) === null || addon.constructor.name !== "Addon") {
                         throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
                     }
                     addon.catch((error, eventName) => {
