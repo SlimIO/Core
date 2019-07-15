@@ -1,3 +1,5 @@
+"use strict";
+
 // Require Node.JS dependencies
 const { join } = require("path");
 const os = require("os");
@@ -18,23 +20,15 @@ const ParallelAddon = require("./parallelAddon.class");
 const AVAILABLE_CPU_LEN = os.cpus().length;
 
 /** @typedef {{ active: boolean, standalone: boolean? }} AddonProperties */
-/** @typedef {Object.<string, AddonProperties>} AddonCFG */
+/** @typedef {object.<string, AddonProperties>} AddonCFG */
 
-/**
- * @class Core
- * @property {Config} config Agent (core) configuration file
- * @property {Boolean} hasBeenInitialized Variable to know if the core has been initialize or not!
- * @property {Map<String, Addon.Callback>} routingTable routingTable
- * @property {Map<String, Addon>} addons Loaded addons
- * @property {String} root
- */
 class Core {
     /**
-     * @constructor
-     * @param {!String} dirname Core dirname
-     * @param {Object} [options={}] options
-     * @param {Number=} [options.autoReload=500] autoReload configuration
-     * @param {Boolean=} [options.silent] configure core to be silent
+     * @class Core
+     * @param {!string} dirname Core dirname
+     * @param {object} [options={}] options
+     * @param {number} [options.autoReload=500] autoReload configuration
+     * @param {boolean} [options.silent] configure core to be silent
      *
      * @throws {TypeError}
      * @throws {Error}
@@ -48,10 +42,10 @@ class Core {
             throw new TypeError("options should be a plain object!");
         }
 
-        /** @type {Map<String, Addon.Callback>} */
+        /** @type {Map<string, Addon.Callback>} */
         this.routingTable = new Map();
 
-        /** @type {Map<String, Addon | ParallelAddon>} */
+        /** @type {Map<string, Addon|ParallelAddon>} */
         this.addons = new Map();
 
         this.root = dirname;
@@ -74,9 +68,9 @@ class Core {
     /**
      * @public
      * @async
-     * @method stdout
-     * @desc stdout message
-     * @param {String} msg message to put stdout
+     * @function stdout
+     * @description stdout message
+     * @param {string} msg message to put stdout
      * @memberof Core#
      * @returns {void}
      */
@@ -89,8 +83,8 @@ class Core {
     /**
      * @public
      * @async
-     * @method initialize
-     * @desc Initialize the core (load configuration, establish a list of addons to pre-load before start phase)
+     * @function initialize
+     * @description Initialize the core (load configuration, establish a list of addons to pre-load before start phase)
      * @memberof Core#
      * @returns {Promise<this>}
      *
@@ -134,10 +128,10 @@ class Core {
      * @async
      * @private
      * @public
-     * @method setupAddonConfiguration
-     * @desc This function is triggered when an Observed addon is updated!
+     * @function setupAddonConfiguration
+     * @description This function is triggered when an Observed addon is updated!
      * @memberof Core#
-     * @param {!String} addonName addonName
+     * @param {!string} addonName addonName
      * @param {AddonProperties} newConfig new addon Configuration
      * @returns {void} Return Async clojure
      */
@@ -218,8 +212,8 @@ class Core {
     /**
      * @async
      * @private
-     * @method setupAddonListener
-     * @desc Setup all listeners for a given Addon!
+     * @function setupAddonListener
+     * @description Setup all listeners for a given Addon!
      * @param {!Addon | ParallelAddon} addon addon
      * @returns {Promise<Addon>}
      *
@@ -233,10 +227,10 @@ class Core {
         if (addon instanceof ParallelAddon) {
             /**
              * @async
-             * @func messageHandler
-             * @desc Handle addon message!
-             * @param {!String} messageId messageId
-             * @param {!String} target target
+             * @function messageHandler
+             * @description Handle addon message!
+             * @param {!string} messageId messageId
+             * @param {!string} target target
              * @param {any[]} args Callback arguments
              * @returns {void}
              */
@@ -286,10 +280,10 @@ class Core {
         else {
             /**
              * @async
-             * @func messageHandler
-             * @desc Handle addon message!
-             * @param {!String} messageId messageId
-             * @param {!String} target target
+             * @function messageHandler
+             * @description Handle addon message!
+             * @param {!string} messageId messageId
+             * @param {!string} target target
              * @param {any[]} args Callback arguments
              * @returns {void}
              */
@@ -380,8 +374,8 @@ class Core {
     /**
      * @public
      * @async
-     * @method exit
-     * @desc Exit the core properly
+     * @function exit
+     * @description Exit the core properly
      * @memberof Core#
      * @returns {Promise<void>}
      *

@@ -1,3 +1,5 @@
+"use strict";
+
 /**
  * @namespace utils
  */
@@ -9,7 +11,7 @@ const {
 } = require("fs");
 
 /**
- * @typedef {Object.<string, {}>} emptyAddon
+ * @typedef {object.<string, {}>} emptyAddon
  */
 
 /**
@@ -17,8 +19,8 @@ const {
  * @function searchForAddons
  * @exports utils/searchForAddons
  * @memberof utils
- * @desc Search for valid addons on the agent disk
- * @param {!String} root root system path
+ * @description Search for valid addons on the agent disk
+ * @param {!string} root root system path
  * @returns {emptyAddon}
  */
 async function searchForAddons(root) {
@@ -62,11 +64,11 @@ async function searchForAddons(root) {
  * @public
  * @function generateDump
  * @exports utils/generateDump
- * @desc Dump an error!
+ * @description Dump an error!
  * @memberof utils
- * @param {String=} root root directory
+ * @param {string} [root] root directory
  * @param {!Error} error Error Object (or NodeJS error)
- * @returns {String}
+ * @returns {string}
  */
 function generateDump(root = __dirname, error) {
     const timestamp = Date.now();

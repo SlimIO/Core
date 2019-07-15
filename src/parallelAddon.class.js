@@ -1,4 +1,6 @@
-// Require Node.JS dependencies
+"use strict";
+
+// Require Node.js dependencies
 const { join } = require("path");
 const { fork } = require("child_process");
 
@@ -7,31 +9,24 @@ const SafeEmitter = require("@slimio/safe-emitter");
 const IPC = require("@slimio/ipc");
 const uuid = require("uuid/v4");
 
-// SCRIPT CONSTANTS
+// CONSTANTS
 const FORK_CONTAINER_PATH = join(__dirname, "forked.container.js");
 
 /**
- * @func defaultHeader
- * @desc Generate Default ParralelAddon callback header
- * @return {Object}
+ * @function defaultHeader
+ * @description Generate Default ParralelAddon callback header
+ * @returns {object}
  */
 function defaultHeader() {
     return { from: "core", id: uuid() };
 }
 
-/**
- * @class ParallelAddon
- * @extends SafeEmitter
- *
- * @property {String} root Addon root path
- * @property {String} addonName name of the Wrappered addon
- * @property {IPC} ipc IPC Module
- */
 class ParallelAddon extends SafeEmitter {
     /**
-     * @constructor
-     * @param {!String} root root directory
-     * @param {!String} addonName addonName
+     * @class ParallelAddon
+     * @augments SafeEmitter
+     * @param {!string} root root directory
+     * @param {!string} addonName addonName
      *
      * @throws {TypeError}
      */
@@ -49,9 +44,9 @@ class ParallelAddon extends SafeEmitter {
     }
 
     /**
-     * @method createForkProcesses
-     * @desc Create and Fork a new Processes!
-     * @memberof ParallelAddon
+     * @function createForkProcesses
+     * @description Create and Fork a new Processes!
+     * @memberof ParallelAddon#
      * @returns {void}
      */
     createForkProcesses() {
@@ -83,9 +78,10 @@ class ParallelAddon extends SafeEmitter {
 
     /**
      * @async
-     * @method executeCallback
-     * @desc Polyfill of Addon.executeCallback with forked process!
-     * @param {!String} callback callback name
+     * @function executeCallback
+     * @description Polyfill of Addon.executeCallback with forked process!
+     * @memberof ParallelAddon#
+     * @param {!string} callback callback name
      * @param {*} header callback header
      * @param {any[]} args args
      * @returns {Promise<any>}
