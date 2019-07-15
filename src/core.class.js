@@ -108,15 +108,15 @@ class Core {
         }
 
         // Setup configuration observable
-        for (const [addonName] of Object.entries(addonsCfg)) {
-            this.config.observableOf(`addons.${addonName}`).subscribe(
-                (curr) => {
-                    this.setupAddonConfiguration(addonName, curr)
-                        .catch((error) => generateDump(this.root, error));
-                },
-                (error) => generateDump(this.root, error)
-            );
-        }
+        this.config.observableOf("addons").subscribe(
+            (curr) => {
+                for (const [addonName, config] of Object.entries(curr)) {
+                    this.setupAddonConfiguration(addonName, config)
+                        .catch((err) => generateDump(this.root, err));
+                }
+            },
+            (error) => generateDump(this.root, error)
+        );
 
         // Setup initialization state to true
         this.hasBeenInitialized = true;
@@ -133,7 +133,7 @@ class Core {
      * @memberof Core#
      * @param {!string} addonName addonName
      * @param {AddonProperties} newConfig new addon Configuration
-     * @returns {void} Return Async clojure
+     * @returns {Promise<void>} Return Async clojure
      */
     async setupAddonConfiguration(addonName, { active, standalone }) {
         /** @type {Addon | ParallelAddon} */
