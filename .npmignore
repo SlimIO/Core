@@ -16,3 +16,4 @@ commitlint.config.js
 .env
 .travis.yml
 CHANGELOG.md
+temp/
