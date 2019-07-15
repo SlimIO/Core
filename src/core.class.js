@@ -7,6 +7,7 @@ const Config = require("@slimio/config");
 const { createDirectory } = require("@slimio/utils");
 const is = require("@slimio/is");
 const IPC = require("@slimio/ipc");
+const Logger = require("@slimio/logger");
 const isStream = require("is-stream");
 
 // Require Internal Dependencies
@@ -56,6 +57,7 @@ class Core {
         this.root = dirname;
         this.silent = options.silent || false;
         this.hasBeenInitialized = false;
+        this.logger = new Logger(void 0, { title: "core" });
 
         const autoReload = typeof options.autoReload === "boolean" ? options.autoReload : false;
         this.config = new Config(join(this.root, "agent.json"), {
@@ -74,15 +76,14 @@ class Core {
      * @async
      * @method stdout
      * @desc stdout message
-     * @param {String=} [msg=""] message to put stdout
+     * @param {String} msg message to put stdout
      * @memberof Core#
      * @returns {void}
      */
-    stdout(msg = "") {
-        if (this.silent) {
-            return;
+    stdout(msg) {
+        if (!this.silent) {
+            this.logger.writeLine(msg);
         }
-        process.stdout.write(`[CORE] ${msg}\n`);
     }
 
     /**
@@ -392,11 +393,12 @@ class Core {
         }
 
         // Wait for all addons to be stopped!
-        await Promise.all(
-            [...this.addons.values()].map((addon) => addon.executeCallback("stop"))
-        );
-
-        await this.config.close();
+        const callbacks = [...this.addons.values()].map((addon) => addon.executeCallback("stop"));
+        await Promise.all([
+            ...callbacks,
+            this.config.close(),
+            this.logger.close()
+        ]);
 
         this.hasBeenInitialized = false;
     }

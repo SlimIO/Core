@@ -3,6 +3,7 @@
 /// <reference types="@types/es6-shim" />
 /// <reference types="@slimio/addon" />
 /// <reference types="@slimio/config" />
+/// <reference types="@slimio/logger" />
 
 declare class Core {
     constructor(dirname: string, options?: Core.ConstructorOptions);
@@ -12,6 +13,7 @@ declare class Core {
     addons: Map<string, Addon>;
     config: Config<Core.AddonsCFG>;
     silent: boolean;
+    logger: Logger;
 
     static DEFAULT_CONFIGURATION: Core.CFG;
     static DEFAULT_SCHEMA: object;
