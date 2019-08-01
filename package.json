@@ -23,8 +23,6 @@
     "files": [
         "index.js",
         "index.d.ts",
-        ".eslintignore",
-        "slimio.toml",
         "src"
     ],
     "author": "SlimIO",
