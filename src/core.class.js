@@ -16,8 +16,9 @@ const isStream = require("is-stream");
 const { searchForAddons, generateDump } = require("./utils");
 const ParallelAddon = require("./parallelAddon.class");
 
-// SCRIPT CONSTANTS
+// CONSTANTS
 const AVAILABLE_CPU_LEN = os.cpus().length;
+const SYM_ADDON = Symbol.for("Addon");
 
 /** @typedef {{ active: boolean, standalone: boolean? }} AddonProperties */
 /** @typedef {object.<string, AddonProperties>} AddonCFG */
@@ -159,7 +160,7 @@ class Core {
                     // TODO: Replace by lazy import when possible
                     // eslint-disable-next-line
                     addon = require(addonEntryFile);
-                    if (Object.getPrototypeOf(addon) === null || addon.constructor.name !== "Addon") {
+                    if (Boolean(addon[SYM_ADDON]) === false) {
                         throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
                     }
                     addon.catch((error, eventName) => {
