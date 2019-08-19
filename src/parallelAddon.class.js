@@ -40,7 +40,8 @@ class ParallelAddon extends SafeEmitter {
         }
 
         this.root = root;
-        this.addonName = addonName;
+        this.name = addonName;
+        this.locks = new Map();
     }
 
     /**
@@ -89,12 +90,12 @@ class ParallelAddon extends SafeEmitter {
      * @throws {Error}
      */
     async executeCallback(callback, header = defaultHeader(), ...args) {
-        const { data: { body, error } } = await this.ipc.send("message", { header, data: { callback, args } });
-        if (error) {
-            throw new Error(error);
+        const { data } = await this.ipc.send("message", { header, data: { callback, args } });
+        if (data.error) {
+            throw new Error(data.error);
         }
 
-        return body;
+        return data.body;
     }
 }
 

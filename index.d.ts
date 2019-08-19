@@ -5,6 +5,8 @@
 /// <reference types="@slimio/config" />
 /// <reference types="@slimio/logger" />
 
+import * as Addon from "@slimio/addon";
+
 declare class Core {
     constructor(dirname: string, options?: Core.ConstructorOptions);
 
@@ -21,6 +23,7 @@ declare class Core {
     // Methods
     private setupAddonListener(addon: Addon): Promise<Addon>;
     private setupAddonConfiguration(addonName: string, newConfig: Core.AddonsCFG): void;
+    searchForLockedAddons(addonName: string): IterableIterator<string>;
     initialize(): Promise<this>;
     exit(): Promise<void>;
 }

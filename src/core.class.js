@@ -46,7 +46,7 @@ class Core {
         /** @type {Map<string, Addon.Callback>} */
         this.routingTable = new Map();
 
-        /** @type {Map<string, Addon|ParallelAddon>} */
+        /** @type {Map<string, Addon>} */
         this.addons = new Map();
 
         this.root = dirname;
@@ -126,6 +126,20 @@ class Core {
     }
 
     /**
+     * @public
+     * @generator
+     * @function searchForLockedAddons
+     * @param {!string} addonName
+     */
+    * searchForLockedAddons(addonName) {
+        for (const addon of this.addons.values()) {
+            if (addon.locks.has(addonName)) {
+                yield addon.name;
+            }
+        }
+    }
+
+    /**
      * @async
      * @private
      * @public
@@ -137,7 +151,7 @@ class Core {
      * @returns {Promise<void>} Return Async clojure
      */
     async setupAddonConfiguration(addonName, { active, standalone }) {
-        /** @type {Addon | ParallelAddon} */
+        /** @type {Addon} */
         let addon = null;
         const isStandalone = AVAILABLE_CPU_LEN > 1 ? standalone : false;
 
@@ -191,9 +205,13 @@ class Core {
             if (addon instanceof ParallelAddon && active && isStandalone) {
                 addon.createForkProcesses();
             }
-            setImmediate(() => {
-                addon.executeCallback(stateToBeTriggered);
-            });
+
+            if (stateToBeTriggered === "stop") {
+                for (const name of this.searchForLockedAddons(addonName)) {
+                    this.addons.get(name).executeCallback("sleep");
+                }
+            }
+            setImmediate(() => addon.executeCallback(stateToBeTriggered));
 
             // TODO: do we cleanup inactive addons ?
             // if (!active) {
@@ -221,11 +239,15 @@ class Core {
      * @this Core
      */
     async setupAddonListener(addon) {
-        /** @type {{name: string, callbacks: string[]}} */
-        const { name, callbacks } = await addon.executeCallback("get_info");
+        /** @type {{name: string, callbacks: string[], lockOn: string[]}} */
+        const { name, callbacks, lockOn = [] } = await addon.executeCallback("get_info");
 
         let messageHandler = null;
         if (addon instanceof ParallelAddon) {
+            for (const addonName of lockOn) {
+                addon.locks.set(addonName, null);
+            }
+
             /**
              * @async
              * @function messageHandler
