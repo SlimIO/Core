@@ -8,7 +8,7 @@ The Core was created to load and manage SlimIO addons, it will create/handle com
 Each addon **are isolated from each others** (designed like **container above**).
 
 ## Requirements
-- Node.js v10 or higher
+- [Node.js](https://nodejs.org/en/) v10 or higher
 
 ## Features / Roles
 - (Re)loading addons.
