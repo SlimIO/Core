@@ -1,16 +1,15 @@
-"use strict";
-
 // Require Node.js dependencies
-const { join } = require("path");
-const { fork } = require("child_process");
+import { resolve } from "path";
+import { fork } from "child_process";
 
 // Require Third-party Dependencies
-const SafeEmitter = require("@slimio/safe-emitter");
-const IPC = require("@slimio/ipc");
-const uuid = require("uuid/v4");
+import SafeEmitter from "@slimio/safe-emitter";
+import IPC from "@slimio/ipc";
+import uuid from "uuid";
 
 // CONSTANTS
-const FORK_CONTAINER_PATH = join(__dirname, "forked.container.js");
+const FORK_CONTAINER_PATH = resolve("forked.container.js");
+const SYM_PARALLEL = Symbol.for("ParallelAddon");
 
 /**
  * @function defaultHeader
@@ -18,10 +17,10 @@ const FORK_CONTAINER_PATH = join(__dirname, "forked.container.js");
  * @returns {object}
  */
 function defaultHeader() {
-    return { from: "core", id: uuid() };
+    return { from: "core", id: uuid.v4() };
 }
 
-class ParallelAddon extends SafeEmitter {
+export default class ParallelAddon extends SafeEmitter {
     /**
      * @class ParallelAddon
      * @augments SafeEmitter
@@ -39,9 +38,21 @@ class ParallelAddon extends SafeEmitter {
             throw new TypeError("addonName should be typeof <string>");
         }
 
+        this[SYM_PARALLEL] = true;
         this.root = root;
         this.name = addonName;
         this.locks = new Map();
+    }
+
+    /**
+     * @static
+     * @function isParallelAddon
+     * @memberof Addon#
+     * @param {!any} obj
+     * @returns {boolean}
+     */
+    static isParallelAddon(obj) {
+        return obj && Boolean(obj[SYM_PARALLEL]);
     }
 
     /**
@@ -98,5 +109,3 @@ class ParallelAddon extends SafeEmitter {
         return data.body;
     }
 }
-
-module.exports = ParallelAddon;

@@ -3,6 +3,7 @@
     "version": "0.9.0",
     "description": "Slim.IO Core",
     "main": "index.js",
+    "type": "module",
     "scripts": {
         "prepublishOnly": "pkg-ok",
         "test": "node test/japaRunner.js",

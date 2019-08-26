@@ -1,14 +1,14 @@
-"use strict";
-
 /**
  * @namespace utils
  */
+
 // Require Node.JS dependencie(s)
-const { join } = require("path");
-const {
-    promises: { readdir, lstat, access, writeFile },
-    constants: { R_OK, X_OK }
-} = require("fs");
+import { join } from "path";
+import { promises as fs, constants } from "fs";
+
+// CONSTANTS
+const { readdir, lstat, access, writeFile } = fs;
+const { R_OK, X_OK } = constants;
 
 /**
  * @typedef {object.<string, {}>} emptyAddon
@@ -23,7 +23,7 @@ const {
  * @param {!string} root root system path
  * @returns {emptyAddon}
  */
-async function searchForAddons(root) {
+export async function searchForAddons(root) {
     if (typeof root !== "string") {
         throw new TypeError("utils.searchForAddons->root should be typeof <string>");
     }
@@ -70,7 +70,7 @@ async function searchForAddons(root) {
  * @param {!Error} error Error Object (or NodeJS error)
  * @returns {string}
  */
-function generateDump(root = __dirname, error) {
+export function generateDump(root = __dirname, error) {
     const timestamp = Date.now();
     const dumpFile = join(root, "debug", `debug_${timestamp}.json`);
     const dumpStr = JSON.stringify({
@@ -86,8 +86,3 @@ function generateDump(root = __dirname, error) {
 
     return dumpFile;
 }
-
-module.exports = {
-    searchForAddons,
-    generateDump
-};

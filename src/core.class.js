@@ -1,30 +1,34 @@
-"use strict";
-
 // Require Node.JS dependencies
-const { join } = require("path");
-const os = require("os");
+import { join, dirname } from "path";
+import { createRequire } from 'module';
+import { fileURLToPath as fromURL, pathToFileURL } from 'url';
+import os from "os";
 
 // Require Third-party dependencies
-const Config = require("@slimio/config");
-const { createDirectory } = require("@slimio/utils");
-const is = require("@slimio/is");
-const IPC = require("@slimio/ipc");
-const Logger = require("@slimio/logger");
-const isStream = require("is-stream");
-const semver = require("semver");
+import Config from "@slimio/config";
+import utils from "@slimio/utils";
+import is from "@slimio/is";
+import IPC from "@slimio/ipc";
+import Logger from "@slimio/logger";
+import isStream from "is-stream";
+import semver from "semver";
 
 // Require Internal Dependencies
-const { searchForAddons, generateDump } = require("./utils");
-const ParallelAddon = require("./parallelAddon.class");
+import { searchForAddons, generateDump } from "./utils.js";
+import ParallelAddon from "./parallelAddon.class.js";
 
 // CONSTANTS
 const AVAILABLE_CPU_LEN = os.cpus().length;
 const SYM_ADDON = Symbol.for("Addon");
 
+// Vars
+const __filename = fromURL(import.meta.url);
+const require = createRequire(__filename);
+
 /** @typedef {{ active: boolean, standalone: boolean? }} AddonProperties */
 /** @typedef {object.<string, AddonProperties>} AddonCFG */
 
-class Core {
+export default class Core {
     /**
      * @class Core
      * @param {!string} dirname Core dirname
@@ -94,7 +98,7 @@ class Core {
      */
     async initialize() {
         // Create root debug directory
-        createDirectory(join(this.root, "debug"));
+        utils.createDirectory(join(this.root, "debug"));
 
         // Read the agent (core) configuration file
         await this.config.read(Core.DEFAULT_CONFIGURATION);
@@ -163,7 +167,7 @@ class Core {
             if (!active) {
                 return void 0;
             }
-            const addonEntryFile = join(this.root, "addons", addonName, "index.js");
+            const addonEntryFile = pathToFileURL(join(this.root, "addons", addonName, "index.js"));
 
             try {
                 if (isStandalone) {
@@ -172,9 +176,7 @@ class Core {
                     this.stdout(`Load addon '${addonName}' on his own Node.js process!`);
                 }
                 else {
-                    // TODO: Replace by lazy import when possible
-                    // eslint-disable-next-line
-                    addon = require(addonEntryFile);
+                    addon = (await import(addonEntryFile)).default;
                     if (Boolean(addon[SYM_ADDON]) === false) {
                         throw new Error(`Addon '${addonName}' (${addonEntryFile}) not detected as an Addon.`);
                     }
@@ -251,7 +253,7 @@ class Core {
         const { name, callbacks, lockOn = [] } = await addon.executeCallback("get_info");
 
         let messageHandler = null;
-        if (addon instanceof ParallelAddon) {
+        if (ParallelAddon.isParallelAddon(addon)) {
             for (const addonName of lockOn) {
                 addon.locks.set(addonName, null);
             }
@@ -436,6 +438,3 @@ Core.DEFAULT_CONFIGURATION = {
 
 // Default Core Configuration JSON Schema
 Core.DEFAULT_SCHEMA = require("./config/agent.schema.json");
-
-// Export Core class
-module.exports = Core;
