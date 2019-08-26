@@ -11,6 +11,7 @@ const is = require("@slimio/is");
 const IPC = require("@slimio/ipc");
 const Logger = require("@slimio/logger");
 const isStream = require("is-stream");
+const semver = require("semver");
 
 // Require Internal Dependencies
 const { searchForAddons, generateDump } = require("./utils");
@@ -175,8 +176,15 @@ class Core {
                     // eslint-disable-next-line
                     addon = require(addonEntryFile);
                     if (Boolean(addon[SYM_ADDON]) === false) {
-                        throw new Error(`Failed to load addon ${addonName} with entry file at ${addonEntryFile}`);
+                        throw new Error(`Addon '${addonName}' (${addonEntryFile}) not detected as an Addon.`);
                     }
+
+                    const requiredVersion = addon.constructor.REQUIRED_CORE_VERSION || "*";
+                    if (!semver.satisfies(global.coreVersion, requiredVersion)) {
+                        // eslint-disable-next-line
+                        throw new Error(`Addon '${addonName}' (${addonEntryFile}) container version doens't satifies the core version '${global.coreVersion}' with range of '${requiredVersion}'`);
+                    }
+
                     addon.catch((error, eventName) => {
                         if (eventName === "start") {
                             addon.executeCallback("stop");
