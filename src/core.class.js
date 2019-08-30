@@ -1,5 +1,5 @@
 // Require Node.JS dependencies
-import { join, dirname } from "path";
+import { join } from "path";
 import { createRequire } from 'module';
 import { fileURLToPath as fromURL, pathToFileURL } from 'url';
 import os from "os";
