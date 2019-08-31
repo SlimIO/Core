@@ -1,10 +1,16 @@
-// Require Node.JS Dependencies
-const { join } = require("path");
-const { writeFile, unlink } = require("fs").promises;
-const { spawn } = require("child_process");
+// Require Node.js Dependencies
+import { join, dirname } from "path";
+import { promises as fs } from "fs";
+import { spawn } from "child_process";
+import { fileURLToPath } from 'url';
+const { writeFile, unlink } = fs;
 
 // Require Third-party dependencies
-const test = require("japa");
+import test from "japa";
+
+// Recreate __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // GROUP CONSTANTS
 const WCA_DIR = join(__dirname, "wca");

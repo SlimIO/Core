@@ -1,13 +1,20 @@
-require("dotenv").config();
-
 // Require NodeJS Dependencies
-const { join } = require("path");
+import { join, dirname } from "path";
+import { fileURLToPath } from 'url';
 
 // Require Third-party Dependencies
-const { configure } = require("japa");
+import dotenv from "dotenv";
+import japa from "japa";
+
+// Load env
+dotenv.config();
+
+// Recreate __dirname
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 // Load all sub tests!
-configure({
+japa.configure({
     files: [
         // join(__dirname, "communication.js"),
         // join(__dirname, "utils.js"),

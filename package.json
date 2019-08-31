@@ -6,7 +6,7 @@
     "type": "module",
     "scripts": {
         "prepublishOnly": "pkg-ok",
-        "test": "node test/japaRunner.js",
+        "test": "node --experimental-modules test/japaRunner.js",
         "doc": "jsdoc -c ./jsdoc.json -r -R ./README.md -P ./package.json --verbose",
         "coverage": "c8 -r=\"html\" npm test"
     },
