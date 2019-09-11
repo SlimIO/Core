@@ -192,7 +192,7 @@ export default class Core {
                             addon.executeCallback("stop");
                         }
                         const dumpFile = generateDump(this.root, error);
-                        this.stdout(
+                        this.logger.writeLine(
                             `An error occured in addon '${addonName}' (event '${eventName}') - ERR dumped at: ${dumpFile}`
                         );
                     });
@@ -204,7 +204,7 @@ export default class Core {
             }
             catch (error) {
                 const dumpFile = generateDump(this.root, error);
-                this.stdout(`An error occured while loading addon ${addonName} (ERROR dumped in: ${dumpFile})`);
+                this.logger.writeLine(`An error occured while loading addon ${addonName} (ERROR dumped in: ${dumpFile})`);
 
                 return void 0;
             }
@@ -230,7 +230,7 @@ export default class Core {
         }
         catch (error) {
             const dumpFile = generateDump(this.root, error);
-            this.stdout(
+            this.logger.writeLine(
                 `An error occured while exec ${stateToBeTriggered} on addon ${addonName} (ERROR dumped in: ${dumpFile})`
             );
         }
