@@ -59,13 +59,13 @@ export default class Core {
         this.hasBeenInitialized = false;
         this.logger = new Logger(void 0, { title: "core" });
 
-        const autoReload = typeof options.autoReload === "boolean" ? options.autoReload : false;
+        const autoReload = is.number(options.autoReload);
         this.config = new Config(join(this.root, "agent.json"), {
             createOnNoEntry: true,
             writeOnSet: true,
             autoReload,
             defaultSchema: Core.DEFAULT_SCHEMA,
-            reloadDelay: autoReload ? 500 : void 0
+            reloadDelay: autoReload ? options.autoReload : 500
         });
 
         global.slimio_core = this;
