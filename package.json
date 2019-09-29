@@ -61,7 +61,7 @@
     },
     "dependencies": {
         "@slimio/addon": "^0.22.1",
-        "@slimio/config": "^0.14.1",
+        "@slimio/config": "^0.15.1",
         "@slimio/ipc": "^0.1.3",
         "@slimio/is": "^1.5.1",
         "@slimio/logger": "^0.1.2",
