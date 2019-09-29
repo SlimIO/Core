@@ -249,8 +249,9 @@ export default class Core {
      * @this Core
      */
     async setupAddonListener(addon) {
-        /** @type {{name: string, callbacks: string[], lockOn: string[]}} */
-        const { name, callbacks, lockOn = [] } = await addon.executeCallback("status");
+        /** @type {Addon.Status} */
+        const { name, lockOn = [], ...status } = await addon.executeCallback("status");
+        const callbacks = Object.keys(status.callbacks);
 
         let messageHandler = null;
         if (ParallelAddon.isParallelAddon(addon)) {
