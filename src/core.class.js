@@ -187,6 +187,14 @@ export default class Core {
                         throw new Error(`Addon '${addonName}' (${addonEntryFile}) container version doens't satifies the core version '${global.coreVersion}' with range of '${requiredVersion}'`);
                     }
 
+                    // Setup auto ready if there is no start/awake event.
+                    const listenerCount = addon.listenerCount("start") + addon.listenerCount("awake");
+                    if (listenerCount === 0) {
+                        addon.on("awake", async() => {
+                            await addon.ready();
+                        });
+                    }
+
                     addon.catch((error, eventName) => {
                         if (eventName === "start") {
                             addon.executeCallback("stop");
