@@ -69,6 +69,7 @@ The constructor take an optional options object which contain all options to con
 interface ConstructorOptions {
     silent?: boolean;
     autoReload?: number;
+    toml?: boolean;
 }
 ```
 </details>
@@ -77,6 +78,12 @@ interface ConstructorOptions {
 <br />
 
 Initialize the Core (it will load configuration and addons). The loading of addons is lazy, so the response will be returned before the addons have had time to fully load.
+</details>
+
+<details><summary>searchForLockedAddons(addonName: string): IterableIterator< string ></summary>
+<br />
+
+Search locked addons for a given **addonName**.
 </details>
 
 <details><summary>exit(): Promise< void ></summary>
