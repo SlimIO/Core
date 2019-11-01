@@ -36,7 +36,15 @@ $ yarn add @slimio/core
 A script that demonstrate how to load a default core (Configuration will be created dynamically).
 
 ```js
-const Core = require("@slimio/core");
+import "make-promises-safe";
+
+import { fileURLToPath } from 'url';
+import { dirname } from 'path';
+
+import Core from "@slimio/core";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
 
 async function main() {
     console.time("start_core");
