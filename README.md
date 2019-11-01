@@ -65,6 +65,15 @@ async function main() {
 main().catch(console.error);
 ```
 
+## Global
+The core register himself as a global with the name `slimio_core`.
+
+```js
+console.log(global.slimio_core);
+```
+
+The current core version is also available as `global.coreVersion`.
+
 ## API
 
 <details><summary>constructor(dirname: string, options?: Core.ConstructorOptions)</summary>
