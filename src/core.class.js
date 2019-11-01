@@ -1,4 +1,5 @@
-// Require Node.JS dependencies
+// Require Node.js dependencies
+import { promises as fs } from "fs";
 import { join } from "path";
 import { createRequire } from 'module';
 import { fileURLToPath as fromURL, pathToFileURL } from 'url';
@@ -6,7 +7,6 @@ import os from "os";
 
 // Require Third-party dependencies
 import Config from "@slimio/config";
-import utils from "@slimio/utils";
 import is from "@slimio/is";
 import IPC from "@slimio/ipc";
 import Logger from "@slimio/logger";
@@ -98,7 +98,7 @@ export default class Core {
      */
     async initialize() {
         // Create root debug directory
-        utils.createDirectory(join(this.root, "debug"));
+        await fs.mkdir(join(this.root, "debug"), { recursive: true });
 
         // Read the agent (core) configuration file
         await this.config.read(Core.DEFAULT_CONFIGURATION);
