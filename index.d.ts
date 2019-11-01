@@ -48,6 +48,7 @@ declare namespace Core {
     interface ConstructorOptions {
         autoReload?: number;
         silent?: boolean;
+        toml?: boolean;
     }
 
     /**

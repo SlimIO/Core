@@ -1,4 +1,5 @@
 // Require Node.js dependencies
+import { existsSync } from "fs";
 import { promises as fs } from "fs";
 import { join } from "path";
 import { createRequire } from 'module';
@@ -35,6 +36,7 @@ export default class Core {
      * @param {object} [options={}] options
      * @param {number} [options.autoReload=500] autoReload configuration
      * @param {boolean} [options.silent] configure core to be silent
+     * @param {boolean} [options.toml] enable TOML configuration
      *
      * @throws {TypeError}
      * @throws {Error}
@@ -59,13 +61,21 @@ export default class Core {
         this.hasBeenInitialized = false;
         this.logger = new Logger(void 0, { title: "core" });
 
-        const autoReload = is.number(options.autoReload);
-        this.config = new Config(join(this.root, "agent.json"), {
+        const autoReload = is.bool(options.autoReload) || is.number(options.autoReload);
+        const reloadDelay = is.number(options.autoReload) ? options.autoReload : 500;
+        this.logger.writeLine(
+            `autoreload ${autoReload ? "enabled" : "disabled"} ${autoReload ? `(with a delay of ${reloadDelay}ms)` : ""}`);
+
+        if (existsSync(join(this.root, "agent.toml"))) {
+            options.toml = true;
+        }
+        const configName = Boolean(options.toml) ? "agent.toml" : "agent.json";
+        this.config = new Config(join(this.root, configName), {
             createOnNoEntry: true,
             writeOnSet: true,
             autoReload,
             defaultSchema: Core.DEFAULT_SCHEMA,
-            reloadDelay: autoReload ? options.autoReload : 500
+            reloadDelay
         });
 
         global.slimio_core = this;
