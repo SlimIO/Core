@@ -1,4 +1,10 @@
 # Core
+![version](https://img.shields.io/badge/dynamic/json.svg?url=https://raw.githubusercontent.com/SlimIO/core/master/package.json&query=$.version&label=Version)
+[![Maintenance](https://img.shields.io/badge/Maintained%3F-yes-green.svg)](https://github.com/SlimIO/core/commit-activity)
+[![mit](https://img.shields.io/github/license/Naereen/StrapDown.js.svg)](https://github.com/SlimIO/core/blob/master/LICENSE)
+![dep](https://img.shields.io/david/SlimIO/core)
+![size](https://img.shields.io/github/languages/code-size/SlimIO/core)
+
 The Core was created to load and manage SlimIO addons, it will create/handle communication between each addons.
 
 <p align="center">
@@ -89,10 +95,14 @@ Stop the core and all affiliated ressources (addons, config etc..).
 |[@slimio/config](https://github.com/SlimIO/Config#readme)|Minor|High|Configuration interaction|
 |[@slimio/ipc](https://github.com/SlimIO/ipc#readme)|⚠️Major|High|Inter-process communication|
 |[@slimio/is](https://github.com/SlimIO/is#readme)|Minor|Low|Type checker|
+|[@slimio/logger](https://github.com/SlimIO/logger)|Minor|Low|Sonic Logger with low overhead for SlimIO|
 |[@slimio/safe-emitter](https://github.com/SlimIO/safeEmitter#readme)|Minor|High|Safe emittter|
 |[@slimio/scheduler](https://github.com/SlimIO/Scheduler#readme)|Minor|Low|Scheduler|
 |[@slimio/utils](https://github.com/SlimIO/Utils#readme)|Minor|High|Bunch of useful functions|
+|[is-stream](https://github.com/sindresorhus/is-stream#readme)|Minor|Low|TBC|
 |[make-promises-safe](https://github.com/mcollina/make-promises-safe#readme)|⚠️Major|High|Promise not exit process when fail|
+|[semver](https://github.com/npm/node-semver)|⚠️Major|Low|Semver parser/utilities for node|
+|[uuid](https://github.com/kelektiv/node-uuid#readme)|Minor|Low|Simple, fast generation of RFC4122 UUIDS.|
 
 ## License
 MIT
