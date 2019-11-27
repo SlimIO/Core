@@ -2,8 +2,5 @@
     "extends": "@slimio/eslint-config",
     "parserOptions": {
         "sourceType": "module"
-    },
-    "rules": {
-        "max-statements": "off"
     }
 }

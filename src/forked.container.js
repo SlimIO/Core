@@ -1,5 +1,3 @@
-"use strict";
-
 require("make-promises-safe");
 const IPC = require("@slimio/ipc");
 
