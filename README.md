@@ -11,7 +11,7 @@ The Core was created to load and manage SlimIO addons, it will create/handle com
     <img src="https://i.imgur.com/POLYji8.png" width="400">
 </p>
 
-Each addon **are isolated from each others** (designed like **container above**).
+Each addon **are isolated from each others** (designed like **container above**). You may be interested by the [Gate](https://github.com/SlimIO/Gate) addon as well if you want to learn how the core work and behave at higher level.
 
 ## Requirements
 - [Node.js](https://nodejs.org/en/) v12 or higher
@@ -21,6 +21,8 @@ Each addon **are isolated from each others** (designed like **container above**)
 - Manage communication between addons.
 - Retention of communications in case of anomalies.
 - Monitoring isolation.
+
+The core as clean and well defined roles to be as much stable possible. Behavior related to addons communication and data exposition will be all related to the Gate addon (which is the right hand of the core). As an addon there is no way to talk to the core directly.
 
 ## Getting Started
 
