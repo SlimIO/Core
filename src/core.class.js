@@ -134,8 +134,8 @@ export default class Core {
             (error) => generateDump(this.root, error)
         );
 
-        // Setup initialization state to true
         this.hasBeenInitialized = true;
+        setImmediate(() => process.send("agent_started"));
 
         return this;
     }
