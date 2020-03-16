@@ -5,7 +5,7 @@
 ![dep](https://img.shields.io/david/SlimIO/core)
 ![size](https://img.shields.io/github/languages/code-size/SlimIO/core)
 
-The Core was created to load and manage SlimIO addons, it will create/handle communication between each addons.
+The Core was created to load and manage [SlimIO addons](https://github.com/SlimIO/Addon), it will create/handle communication between each addons.
 
 <p align="center">
     <img src="https://i.imgur.com/POLYji8.png" width="400">
@@ -22,7 +22,7 @@ Each addon **are isolated from each others** (designed like **container above**)
 - Retention of communications in case of anomalies.
 - Monitoring isolation.
 
-The core as clean and well defined roles to be as much stable possible. Behavior related to addons communication and data exposition will be all related to the Gate addon (which is the right hand of the core). As an addon there is no way to talk to the core directly.
+The core as clean and well defined roles to be as much stable possible. Behavior related to addons communication and data exposition will be all related to the [Gate](https://github.com/SlimIO/Gate) addon (which is the right hand of the core). As an addon there is no way to talk to the core directly.
 
 ## Getting Started
 
@@ -66,6 +66,8 @@ async function main() {
 }
 main().catch(console.error);
 ```
+
+> 👀 Not that we use make-promises-safe to enforce [Node.js DEP 00018](https://nodejs.org/api/deprecations.html#deprecations_dep0018_unhandled_promise_rejections).
 
 ## Global
 The core register himself as a global with the name `slimio_core`.
