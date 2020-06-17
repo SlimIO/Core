@@ -5,7 +5,7 @@ import { fork } from "child_process";
 // Require Third-party Dependencies
 import SafeEmitter from "@slimio/safe-emitter";
 import IPC from "@slimio/ipc";
-import uuid from "uuid";
+import uuid from "@lukeed/uuid";
 
 // CONSTANTS
 const FORK_CONTAINER_PATH = resolve("forked.container.js");
@@ -17,7 +17,7 @@ const SYM_PARALLEL = Symbol.for("ParallelAddon");
  * @returns {object}
  */
 function defaultHeader() {
-    return { from: "core", id: uuid.v4() };
+    return { from: "core", id: uuid() };
 }
 
 export default class ParallelAddon extends SafeEmitter {

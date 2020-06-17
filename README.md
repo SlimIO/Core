@@ -130,7 +130,7 @@ Stop the core and all affiliated ressources (addons, config etc..).
 |[is-stream](https://github.com/sindresorhus/is-stream#readme)|Minor|Low|TBC|
 |[make-promises-safe](https://github.com/mcollina/make-promises-safe#readme)|⚠️Major|High|Promise not exit process when fail|
 |[semver](https://github.com/npm/node-semver)|⚠️Major|Low|Semver parser/utilities for node|
-|[uuid](https://github.com/kelektiv/node-uuid#readme)|Minor|Low|Simple, fast generation of RFC4122 UUIDS.|
+|[@lukeed/uuid](https://www.npmjs.com/package/@lukeed/uuid)|Minor|Low|A tiny (230B), fast, and cryptographically secure UUID (v4) generator for Node and the browser|
 
 ## License
 MIT
