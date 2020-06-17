@@ -6,7 +6,7 @@
     "type": "module",
     "scripts": {
         "prepublishOnly": "pkg-ok",
-        "test": "node --experimental-modules test/japaRunner.js",
+        "test": "node --experimental-modules test/core.js",
         "doc": "jsdoc -c ./jsdoc.json -r -R ./README.md -P ./package.json --verbose",
         "coverage": "c8 -r=\"html\" npm test"
     },
@@ -52,7 +52,6 @@
         "dotenv": "^8.2.0",
         "eslint": "^7.0.0",
         "husky": "^4.2.5",
-        "japa": "^3.0.1",
         "jsdoc": "^3.6.4",
         "pkg-ok": "^2.3.1",
         "rimraf": "^3.0.2"
@@ -66,6 +65,7 @@
         "@slimio/logger": "^0.1.2",
         "@slimio/safe-emitter": "^1.1.0",
         "@slimio/scheduler": "^0.8.0",
+        "@slimio/unit-testing": "^1.0.0",
         "@slimio/utils": "^0.9.0",
         "is-stream": "^2.0.0",
         "make-promises-safe": "^5.1.0",
