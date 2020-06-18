@@ -63,6 +63,7 @@
         "@slimio/ipc": "^0.2.1",
         "@slimio/is": "^1.5.1",
         "@slimio/logger": "^0.1.2",
+        "@slimio/oop": "^1.0.0",
         "@slimio/safe-emitter": "^1.1.0",
         "@slimio/scheduler": "^0.8.0",
         "@slimio/unit-testing": "^1.0.0",

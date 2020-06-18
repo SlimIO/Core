@@ -1,25 +1,24 @@
 // Require Node.js dependencies
-import { existsSync } from "fs";
-import { promises as fs } from "fs";
+import { existsSync, promises as fs } from "fs";
 import { join } from "path";
-import { createRequire } from 'module';
-import { fileURLToPath as fromURL, pathToFileURL } from 'url';
+import { createRequire } from "module";
+import { fileURLToPath as fromURL, pathToFileURL } from "url";
 import os from "os";
 
 // Require Third-party dependencies
 import Config from "@slimio/config";
 import is from "@slimio/is";
+import oop from "@slimio/oop";
 import IPC from "@slimio/ipc";
 import Logger from "@slimio/logger";
 import isStream from "is-stream";
 import semver from "semver";
 
 // Require Internal Dependencies
-import { searchForAddons, generateDump } from "./utils.js";
+import { searchForAddons, generateDump, searchForLockedAddons } from "./utils.js";
 import ParallelAddon from "./parallelAddon.class.js";
 
 // CONSTANTS
-const AVAILABLE_CPU_LEN = os.cpus().length;
 const SYM_ADDON = Symbol.for("Addon");
 
 // Vars
@@ -30,45 +29,38 @@ const require = createRequire(__filename);
 /** @typedef {object.<string, AddonProperties>} AddonCFG */
 
 export default class Core {
+    #hasBeenStarted = false;
+    #logger = new Logger(void 0, { title: "core" });
+
+    /** @type {Map<string, Addon.Callback>} */
+    routingTable = new Map();
+
+    /** @type {Map<string, Addon>} */
+    addons = new Map();
+
     /**
      * @class Core
-     * @param {!string} dirname Core dirname
+     * @param {!string} dirname The directory name where you want to start a core.
      * @param {object} [options={}] options
      * @param {number} [options.autoReload=500] autoReload configuration
      * @param {boolean} [options.silent] configure core to be silent
      * @param {boolean} [options.toml] enable TOML configuration
-     *
-     * @throws {TypeError}
-     * @throws {Error}
      */
     constructor(dirname, options = Object.create(null)) {
-        if (!is.string(dirname)) {
-            throw new TypeError("dirname should be typeof string!");
-        }
+        const localOptions = oop.toPlainObject(options);
+        this.root = oop.toString(dirname);
+        this.silent = oop.toNullableBoolean(localOptions.silent) ?? false;
 
-        if (!is.plainObject(options)) {
-            throw new TypeError("options should be a plain object!");
-        }
-
-        /** @type {Map<string, Addon.Callback>} */
-        this.routingTable = new Map();
-
-        /** @type {Map<string, Addon>} */
-        this.addons = new Map();
-
-        this.root = dirname;
-        this.silent = options.silent || false;
-        this.hasBeenInitialized = false;
-        this.logger = new Logger(void 0, { title: "core" });
-
-        const autoReload = is.bool(options.autoReload) || is.number(options.autoReload);
-        const reloadDelay = is.number(options.autoReload) ? options.autoReload : 500;
-        this.logger.writeLine(
+        const autoReload = is.bool(localOptions.autoReload) || is.number(localOptions.autoReload);
+        const reloadDelay = is.number(localOptions.autoReload) ? localOptions.autoReload : 500;
+        this.#logger.writeLine(
             `autoreload ${autoReload ? "enabled" : "disabled"} ${autoReload ? `(with a delay of ${reloadDelay}ms)` : ""}`);
 
         if (existsSync(join(this.root, "agent.toml"))) {
-            options.toml = true;
+            localOptions.toml = true;
         }
+
+        // eslint-disable-next-line no-extra-boolean-cast
         const configName = Boolean(options.toml) ? "agent.toml" : "agent.json";
         this.config = new Config(join(this.root, configName), {
             createOnNoEntry: true,
@@ -83,7 +75,6 @@ export default class Core {
 
     /**
      * @public
-     * @async
      * @function stdout
      * @description stdout message
      * @param {string} msg message to put stdout
@@ -91,39 +82,33 @@ export default class Core {
      * @returns {void}
      */
     stdout(msg) {
-        if (!this.silent) {
-            this.logger.writeLine(msg);
-        }
+        !this.silent && this.#logger.writeLine(msg);
     }
 
     /**
      * @public
      * @async
-     * @function initialize
-     * @description Initialize the core (load configuration, establish a list of addons to pre-load before start phase)
+     * @function start
+     * @description Start the core (load configuration, establish a list of addons to pre-load before start phase)
      * @memberof Core#
      * @returns {Promise<this>}
-     *
-     * @throws {TypeError}
      */
-    async initialize() {
-        // Create root debug directory
+    async start() {
         await fs.mkdir(join(this.root, "debug"), { recursive: true });
-
-        // Read the agent (core) configuration file
         await this.config.read(Core.DEFAULT_CONFIGURATION);
 
         /** @type {AddonCFG} */
         let addonsCfg = this.config.get("addons");
 
-        // If the configuration is empty, search for addons on the disk
+        // If the configuration is empty then we search for addons on the file system.
+        // Most of the time this path is only taken at the first start of the agent.
         if (Object.keys(addonsCfg).length === 0) {
             this.stdout("Searching for addons locally");
             addonsCfg = await searchForAddons(this.root);
             this.config.set("addons", addonsCfg);
         }
 
-        // Setup configuration observable
+        // Watch for configuration update on the 'addons' key.
         this.config.observableOf("addons").subscribe(
             (curr) => {
                 for (const [addonName, config] of Object.entries(curr)) {
@@ -134,24 +119,39 @@ export default class Core {
             (error) => generateDump(this.root, error)
         );
 
-        this.hasBeenInitialized = true;
-        setImmediate(() => process.send("agent_started"));
+        this.#hasBeenStarted = true;
+        if (process.send) {
+            setImmediate(() => process.send("agent_started"));
+        }
 
         return this;
     }
 
     /**
      * @public
-     * @generator
-     * @function searchForLockedAddons
-     * @param {!string} addonName
+     * @async
+     * @function stop
+     * @description Stop the core and close (free) all ressources properly (loggers, configs, addons).
+     * @memberof Core#
+     * @returns {Promise<this>}
      */
-    * searchForLockedAddons(addonName) {
-        for (const addon of this.addons.values()) {
-            if (addon.locks.has(addonName)) {
-                yield addon.name;
-            }
+    async stop() {
+        if (!this.#hasBeenStarted) {
+            return this;
         }
+
+        const callbacks = [...this.addons.values()].map((addon) => addon.executeCallback("stop"));
+        await Promise.allSettled([
+            ...callbacks, this.config.close(), this.#logger.close()
+        ]);
+
+        this.#hasBeenStarted = false;
+
+        return this;
+    }
+
+    get isStarted() {
+        return this.#hasBeenStarted;
     }
 
     /**
@@ -162,18 +162,19 @@ export default class Core {
      * @description This function is triggered when an Observed addon is updated!
      * @memberof Core#
      * @param {!string} addonName addonName
-     * @param {AddonProperties} newConfig new addon Configuration
+     * @param {AddonProperties} [options] new addon Configuration
      * @returns {Promise<void>} Return Async clojure
      */
-    async setupAddonConfiguration(addonName, { active, standalone }) {
-        /** @type {Addon} */
-        let addon = null;
-        const isStandalone = AVAILABLE_CPU_LEN > 1 ? standalone : false;
+    async setupAddonConfiguration(addonName, options = Object.create(null)) {
+        const { active, standalone } = options;
+        const coreHasAddonInMemory = this.addons.has(addonName);
+        const isStandalone = os.cpus().length > 1 ? standalone : false;
 
-        if (this.addons.has(addonName)) {
-            addon = this.addons.get(addonName);
-        }
-        else {
+        /** @type {Addon} */
+        let addon = coreHasAddonInMemory ? this.addons.get(addonName) : null;
+
+        // If the addon has not been loaded then we load it.
+        if (!coreHasAddonInMemory) {
             if (!active) {
                 return void 0;
             }
@@ -191,7 +192,7 @@ export default class Core {
                         throw new Error(`Addon '${addonName}' (${addonEntryFile}) not detected as an Addon.`);
                     }
 
-                    const requiredVersion = addon.constructor.REQUIRED_CORE_VERSION || "*";
+                    const requiredVersion = addon.constructor.REQUIRED_CORE_VERSION ?? "*";
                     if (!semver.satisfies(global.coreVersion, requiredVersion)) {
                         // eslint-disable-next-line
                         throw new Error(`Addon '${addonName}' (${addonEntryFile}) container version doens't satifies the core version '${global.coreVersion}' with range of '${requiredVersion}'`);
@@ -200,9 +201,7 @@ export default class Core {
                     // Setup auto ready if there is no start/awake event.
                     const listenerCount = addon.listenerCount("start") + addon.listenerCount("awake");
                     if (listenerCount === 0) {
-                        addon.on("awake", async() => {
-                            await addon.ready();
-                        });
+                        addon.on("awake", () => addon.ready());
                     }
 
                     addon.catch((error, eventName) => {
@@ -210,7 +209,7 @@ export default class Core {
                             addon.executeCallback("stop");
                         }
                         const dumpFile = generateDump(this.root, error);
-                        this.logger.writeLine(
+                        this.#logger.writeLine(
                             `An error occured in addon '${addonName}' (event '${eventName}') - ERR dumped at: ${dumpFile}`
                         );
                     });
@@ -222,7 +221,7 @@ export default class Core {
             }
             catch (error) {
                 const dumpFile = generateDump(this.root, error);
-                this.logger.writeLine(`An error occured while loading addon ${addonName} (ERROR dumped in: ${dumpFile})`);
+                this.#logger.writeLine(`An error occured while loading addon ${addonName} (ERROR dumped in: ${dumpFile})`);
 
                 return void 0;
             }
@@ -230,25 +229,20 @@ export default class Core {
 
         const stateToBeTriggered = active ? "start" : "stop";
         try {
-            if (addon instanceof ParallelAddon && active && isStandalone) {
+            if (ParallelAddon.isParallelAddon(addon) && active && isStandalone) {
                 addon.createForkProcesses();
             }
 
             if (stateToBeTriggered === "stop") {
-                for (const name of this.searchForLockedAddons(addonName)) {
+                for (const name of searchForLockedAddons(this.addons, addonName)) {
                     this.addons.get(name).executeCallback("sleep");
                 }
             }
             setImmediate(() => addon.executeCallback(stateToBeTriggered));
-
-            // TODO: do we cleanup inactive addons ?
-            // if (!active) {
-            //     this.addons.delete(addonName);
-            // }
         }
         catch (error) {
             const dumpFile = generateDump(this.root, error);
-            this.logger.writeLine(
+            this.#logger.writeLine(
                 `An error occured while exec ${stateToBeTriggered} on addon ${addonName} (ERROR dumped in: ${dumpFile})`
             );
         }
@@ -277,15 +271,6 @@ export default class Core {
                 addon.locks.set(addonName, null);
             }
 
-            /**
-             * @async
-             * @function messageHandler
-             * @description Handle addon message!
-             * @param {!string} messageId messageId
-             * @param {!string} target target
-             * @param {any[]} args Callback arguments
-             * @returns {void}
-             */
             messageHandler = async(messageId, target, args) => {
                 const header = { from: target, id: messageId };
 
@@ -330,15 +315,6 @@ export default class Core {
             };
         }
         else {
-            /**
-             * @async
-             * @function messageHandler
-             * @description Handle addon message!
-             * @param {!string} messageId messageId
-             * @param {!string} target target
-             * @param {any[]} args Callback arguments
-             * @returns {void}
-             */
             messageHandler = async(messageId, target, args) => {
                 noTarget: if (!this.routingTable.has(target)) {
                     await new Promise((resolve) => setTimeout(resolve, 750));
@@ -390,17 +366,6 @@ export default class Core {
             };
         }
 
-        // Setup ready listener
-        addon.prependListener("ready", () => {
-            for (const [addonName, addon] of this.addons.entries()) {
-                if (addonName === name) {
-                    continue;
-                }
-                addon.emit("addonLoaded", name);
-            }
-        });
-
-        // Setup start listener
         addon.prependListener("start", () => {
             for (const callback of callbacks) {
                 this.stdout(`Setup routing target: ${name}.${callback}`);
@@ -412,41 +377,14 @@ export default class Core {
             addon.prependListener("message", messageHandler);
         });
 
-        // Setup stop listener
         addon.prependListener("stop", () => {
             addon.removeEventListener("message", messageHandler);
-            for (const callback of callbacks) {
-                this.routingTable.delete(`${name}.${callback}`);
+            for (const target of callbacks) {
+                this.routingTable.delete(`${name}.${target}`);
             }
         });
 
         return addon;
-    }
-
-    /**
-     * @public
-     * @async
-     * @function exit
-     * @description Exit the core properly
-     * @memberof Core#
-     * @returns {Promise<void>}
-     *
-     * @throws {Error}
-     */
-    async exit() {
-        if (!this.hasBeenInitialized) {
-            throw new Error("Core.exit - Cannot close unitialized core");
-        }
-
-        // Wait for all addons to be stopped!
-        const callbacks = [...this.addons.values()].map((addon) => addon.executeCallback("stop"));
-        await Promise.all([
-            ...callbacks,
-            this.config.close(),
-            this.logger.close()
-        ]);
-
-        this.hasBeenInitialized = false;
     }
 }
 

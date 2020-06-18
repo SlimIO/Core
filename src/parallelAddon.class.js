@@ -5,43 +5,30 @@ import { fork } from "child_process";
 // Require Third-party Dependencies
 import SafeEmitter from "@slimio/safe-emitter";
 import IPC from "@slimio/ipc";
-import uuid from "@lukeed/uuid";
+import oop from "@slimio/oop";
+
+// Import Internal Dependencies
+import { defaultHeader } from "./utils.js";
 
 // CONSTANTS
 const FORK_CONTAINER_PATH = resolve("forked.container.js");
 const SYM_PARALLEL = Symbol.for("ParallelAddon");
 
-/**
- * @function defaultHeader
- * @description Generate Default ParralelAddon callback header
- * @returns {object}
- */
-function defaultHeader() {
-    return { from: "core", id: uuid() };
-}
-
 export default class ParallelAddon extends SafeEmitter {
+    locks = new Map()
+
     /**
      * @class ParallelAddon
      * @augments SafeEmitter
      * @param {!string} root root directory
      * @param {!string} addonName addonName
-     *
-     * @throws {TypeError}
      */
     constructor(root, addonName) {
         super();
-        if (typeof root !== "string") {
-            throw new TypeError("root should be typeof <string>");
-        }
-        if (typeof addonName !== "string") {
-            throw new TypeError("addonName should be typeof <string>");
-        }
 
         this[SYM_PARALLEL] = true;
-        this.root = root;
-        this.name = addonName;
-        this.locks = new Map();
+        this.root = oop.toString(root);
+        this.name = oop.toString(addonName);
     }
 
     /**
@@ -64,13 +51,13 @@ export default class ParallelAddon extends SafeEmitter {
     createForkProcesses() {
         // If there is already a Child Processses running, then return
         if (typeof this.ipc !== "undefined") {
-            return void 0;
+            return;
         }
 
         const cp = fork(FORK_CONTAINER_PATH, [this.root]);
         this.ipc = new IPC(cp);
 
-        // Catch events
+        // Catch addon events like 'start', 'stop', 'sleep' etc...
         this.ipc.on("event", (name, next) => {
             this.emit(name);
             next();
@@ -82,10 +69,6 @@ export default class ParallelAddon extends SafeEmitter {
             this.emit("message", header.id, data.target, data.args);
             next();
         });
-
-        this.on("addonLoaded", (from) => this.ipc.send("event", { from, name: "addonLoaded" }));
-
-        return void 0;
     }
 
     /**

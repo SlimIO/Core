@@ -15,7 +15,9 @@ declare class Core {
     addons: Map<string, Addon>;
     config: Config<Core.AddonsCFG>;
     silent: boolean;
-    logger: Logger;
+    readonly isStarted: boolean;
+    private hasBeenStarted: boolean;
+    private logger: Logger;
 
     static DEFAULT_CONFIGURATION: Core.CFG;
     static DEFAULT_SCHEMA: object;
@@ -24,8 +26,9 @@ declare class Core {
     private setupAddonListener(addon: Addon): Promise<Addon>;
     private setupAddonConfiguration(addonName: string, newConfig: Core.AddonsCFG): void;
     searchForLockedAddons(addonName: string): IterableIterator<string>;
-    initialize(): Promise<this>;
-    exit(): Promise<void>;
+
+    start(): Promise<this>;
+    stop(): Promise<this>;
 }
 
 /**

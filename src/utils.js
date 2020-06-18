@@ -2,17 +2,16 @@
  * @namespace utils
  */
 
-// Require Node.JS dependencie(s)
+// Import Node.js Dependencies
 import { join } from "path";
 import { promises as fs, constants } from "fs";
+
+// Import Third-party Dependencies
+import uuid from "@lukeed/uuid";
 
 // CONSTANTS
 const { readdir, lstat, access, writeFile } = fs;
 const { R_OK, X_OK } = constants;
-
-/**
- * @typedef {object.<string, {}>} emptyAddon
- */
 
 /**
  * @async
@@ -21,7 +20,7 @@ const { R_OK, X_OK } = constants;
  * @memberof utils
  * @description Search for valid addons on the agent disk
  * @param {!string} root root system path
- * @returns {emptyAddon}
+ * @returns {object}
  */
 export async function searchForAddons(root) {
     if (typeof root !== "string") {
@@ -29,10 +28,9 @@ export async function searchForAddons(root) {
     }
     const rootFiles = new Set(await readdir(root));
     if (!rootFiles.has("addons")) {
-        return {};
+        return Object.create(null);
     }
 
-    /** @type {emptyAddon} */
     const ret = Object.create(null);
     const addonsDir = join(root, "addons");
     const addons = await readdir(addonsDir);
@@ -85,4 +83,28 @@ export function generateDump(root = __dirname, error) {
     });
 
     return dumpFile;
+}
+
+/**
+ * @function searchForLockedAddons
+ * @memberof utils
+ * @param {!Map<string, any>} addons
+ * @param {!string} addonName
+ */
+export function* searchForLockedAddons(addons, addonName) {
+    for (const addon of addons.values()) {
+        if (addon.locks.has(addonName)) {
+            yield addon.name;
+        }
+    }
+}
+
+/**
+ * @function defaultHeader
+ * @description Generate Default ParralelAddon callback header
+ * @memberof utils
+ * @returns {object}
+ */
+export function defaultHeader() {
+    return { from: "core", id: uuid() };
 }
