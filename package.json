@@ -59,7 +59,7 @@
     "dependencies": {
         "@lukeed/uuid": "^1.0.1",
         "@slimio/addon": "^0.22.1",
-        "@slimio/config": "^0.15.1",
+        "@slimio/config": "^0.18.0",
         "@slimio/ipc": "^0.2.1",
         "@slimio/is": "^1.5.1",
         "@slimio/logger": "^0.1.2",
