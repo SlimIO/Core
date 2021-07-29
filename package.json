@@ -44,7 +44,7 @@
         "@slimio/addon-factory": "^0.5.0",
         "@slimio/eslint-config": "^4.1.0",
         "@types/es6-shim": "^0.31.40",
-        "@types/node": "^14.0.1",
+        "@types/node": "^16.4.6",
         "@types/rimraf": "^3.0.0",
         "@types/zen-observable": "^0.8.0",
         "c8": "^7.1.2",
