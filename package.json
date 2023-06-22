@@ -70,6 +70,6 @@
         "@slimio/utils": "^0.9.0",
         "is-stream": "^2.0.0",
         "make-promises-safe": "^5.1.0",
-        "semver": "^7.3.2"
+        "semver": "^7.5.2"
     }
 }
